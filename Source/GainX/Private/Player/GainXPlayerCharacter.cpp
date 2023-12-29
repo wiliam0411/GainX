@@ -8,6 +8,11 @@
 #include "Components/SphereComponent.h"
 #include "Components/CapsuleComponent.h"
 
+#include "EnhancedInputSubsystems.h"
+#include "Input/GainXInputComponent.h"
+#include "InputAction.h"
+#include "GainXGameplayTags.h"
+
 AGainXPlayerCharacter::AGainXPlayerCharacter(const FObjectInitializer& ObjInit) : Super(ObjInit)
 {
     PrimaryActorTick.bCanEverTick = true;
@@ -30,10 +35,31 @@ void AGainXPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
 {
     Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-    PlayerInputComponent->BindAxis("MoveForward", this, &AGainXPlayerCharacter::MoveForward);
-    PlayerInputComponent->BindAxis("MoveRight", this, &AGainXPlayerCharacter::MoveRight);
-    PlayerInputComponent->BindAxis("LookUp", this, &AGainXPlayerCharacter::AddControllerPitchInput);
-    PlayerInputComponent->BindAxis("TurnAround", this, &AGainXPlayerCharacter::AddControllerYawInput);
+    if (auto PlayerController = Cast<APlayerController>(Controller))
+    {
+        if (auto Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+        {
+            if (InputMapping)
+            {
+                Subsystem->AddMappingContext(InputMapping, 0);
+            }
+        }
+    }
+
+    UGainXInputComponent* GainXInputComponent = Cast<UGainXInputComponent>(PlayerInputComponent);
+
+    // Make sure to set your input component class in the InputSettings->DefaultClasses
+    check(GainXInputComponent);
+
+    GainXInputComponent->BindActionByTag(
+        InputConfig, GainXGameplayTags::InputTag_Move, ETriggerEvent::Triggered, this, &AGainXPlayerCharacter::Move);
+    GainXInputComponent->BindActionByTag(
+        InputConfig, GainXGameplayTags::InputTag_Look_Mouse, ETriggerEvent::Triggered, this, &AGainXPlayerCharacter::Look);
+
+    // PlayerInputComponent->BindAxis("MoveForward", this, &AGainXPlayerCharacter::MoveForward);
+    // PlayerInputComponent->BindAxis("MoveRight", this, &AGainXPlayerCharacter::MoveRight);
+    // PlayerInputComponent->BindAxis("LookUp", this, &AGainXPlayerCharacter::AddControllerPitchInput);
+    // PlayerInputComponent->BindAxis("TurnAround", this, &AGainXPlayerCharacter::AddControllerYawInput);
     PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AGainXPlayerCharacter::Jump);
     PlayerInputComponent->BindAction("Run", IE_Pressed, this, &AGainXPlayerCharacter::OnStartRunning);
     PlayerInputComponent->BindAction("Run", IE_Released, this, &AGainXPlayerCharacter::OnStopRunning);
@@ -45,6 +71,26 @@ void AGainXPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
     DECLARE_DELEGATE_OneParam(FZoomInputSignature, bool);
     PlayerInputComponent->BindAction<FZoomInputSignature>("Zoom", IE_Pressed, WeaponComponent, &UGainXWeaponComponent::Zoom, true);
     PlayerInputComponent->BindAction<FZoomInputSignature>("Zoom", IE_Released, WeaponComponent, &UGainXWeaponComponent::Zoom, false);
+}
+
+void AGainXPlayerCharacter::Move(const FInputActionValue& InputActionValue)
+{
+    FVector2D MoveVector = InputActionValue.Get<FVector2D>();
+    if (Controller)
+    {
+        AddMovementInput(GetActorForwardVector(), MoveVector.Y);
+        AddMovementInput(GetActorRightVector(), MoveVector.X);
+    }
+}
+
+void AGainXPlayerCharacter::Look(const FInputActionValue& InputActionValue)
+{
+    FVector2D LookVector = InputActionValue.Get<FVector2D>();
+    if (Controller)
+    {
+        AddControllerYawInput(LookVector.X);
+        AddControllerPitchInput(LookVector.Y);
+    }
 }
 
 void AGainXPlayerCharacter::MoveForward(float Amount)
@@ -68,12 +114,14 @@ void AGainXPlayerCharacter::OnStopRunning()
     WantsToRun = false;
 }
 
-void AGainXPlayerCharacter::OnCameraCollisionBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void AGainXPlayerCharacter::OnCameraCollisionBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+    UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
     CheckCameraOverlap();
 }
 
-void AGainXPlayerCharacter::OnCameraCollisionEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+void AGainXPlayerCharacter::OnCameraCollisionEndOverlap(
+    UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
     CheckCameraOverlap();
 }

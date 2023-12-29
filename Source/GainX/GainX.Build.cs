@@ -1,6 +1,7 @@
 // GainX, All Rights Reserved
 
 using UnrealBuildTool;
+using UnrealBuildTool.Rules;
 
 public class GainX : ModuleRules
 {
@@ -17,8 +18,9 @@ public class GainX : ModuleRules
 			"Niagara",
 			"PhysicsCore",
 			"GameplayTasks",
-			"NavigationSystem"
-		});
+			"NavigationSystem",
+            "GameplayTags"
+        });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 
@@ -39,7 +41,9 @@ public class GainX : ModuleRules
             "GainX/Public/AI/EQS",
             "GainX/Public/Menu",
             "GainX/Public/Menu/UI",
-            "GainX/Public/Sound"
+            "GainX/Public/Sound",
+            "GainX/Public/Input",
+            "GainX/Public/System"
         });
 
 		// Uncomment if you are using Slate UI

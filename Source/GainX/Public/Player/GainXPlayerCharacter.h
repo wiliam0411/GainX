@@ -9,6 +9,9 @@
 class UCameraComponent;
 class USpringArmComponent;
 class USphereComponent;
+class UGainXInputConfig;
+class UInputMappingContext;
+struct FInputActionValue;
 
 UCLASS()
 class GAINX_API AGainXPlayerCharacter : public AGainXBaseCharacter
@@ -28,6 +31,12 @@ protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Componenets")
     USphereComponent* CameraCollisionComponent;
 
+    UPROPERTY(EditDefaultsOnly, Category = "Input")
+    UGainXInputConfig* InputConfig;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Input")
+    UInputMappingContext* InputMapping;
+
     virtual void BeginPlay() override;
     virtual void OnDeath() override;
 
@@ -39,6 +48,10 @@ public:
 private:
     bool WantsToRun = false;
     bool IsMovingForward = false;
+
+    // Enhanced Input
+    void Move(const FInputActionValue& InputActionValue);
+    void Look(const FInputActionValue& InputActionValue);
 
     void MoveForward(float Amount);
     void MoveRight(float Amount);
