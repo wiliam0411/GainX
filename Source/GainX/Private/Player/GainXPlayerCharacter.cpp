@@ -51,26 +51,25 @@ void AGainXPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
     // Make sure to set your input component class in the InputSettings->DefaultClasses
     check(GainXInputComponent);
 
-    GainXInputComponent->BindActionByTag(
-        InputConfig, GainXGameplayTags::InputTag_Move, ETriggerEvent::Triggered, this, &AGainXPlayerCharacter::Move);
-    GainXInputComponent->BindActionByTag(
-        InputConfig, GainXGameplayTags::InputTag_Look_Mouse, ETriggerEvent::Triggered, this, &AGainXPlayerCharacter::Look);
+    // clang-format off
+    GainXInputComponent->BindActionByTag(InputConfig, GainXGameplayTags::InputTag_Move, ETriggerEvent::Triggered, this, &AGainXPlayerCharacter::Move);
+    GainXInputComponent->BindActionByTag(InputConfig, GainXGameplayTags::InputTag_Look_Mouse, ETriggerEvent::Triggered, this, &AGainXPlayerCharacter::Look);
+    GainXInputComponent->BindActionByTag(InputConfig, GainXGameplayTags::InputTag_Jump, ETriggerEvent::Started, this, &AGainXPlayerCharacter::Jump);
+    
+    GainXInputComponent->BindActionByTag(InputConfig, GainXGameplayTags::InputTag_Weapon_Fire, ETriggerEvent::Started, WeaponComponent, &UGainXWeaponComponent::StartFire);
+    GainXInputComponent->BindActionByTag(InputConfig, GainXGameplayTags::InputTag_Weapon_Fire, ETriggerEvent::Completed, WeaponComponent, &UGainXWeaponComponent::StopFire);
 
-    // PlayerInputComponent->BindAxis("MoveForward", this, &AGainXPlayerCharacter::MoveForward);
-    // PlayerInputComponent->BindAxis("MoveRight", this, &AGainXPlayerCharacter::MoveRight);
-    // PlayerInputComponent->BindAxis("LookUp", this, &AGainXPlayerCharacter::AddControllerPitchInput);
-    // PlayerInputComponent->BindAxis("TurnAround", this, &AGainXPlayerCharacter::AddControllerYawInput);
-    PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AGainXPlayerCharacter::Jump);
-    PlayerInputComponent->BindAction("Run", IE_Pressed, this, &AGainXPlayerCharacter::OnStartRunning);
-    PlayerInputComponent->BindAction("Run", IE_Released, this, &AGainXPlayerCharacter::OnStopRunning);
-    PlayerInputComponent->BindAction("Fire", IE_Pressed, WeaponComponent, &UGainXWeaponComponent::StartFire);
-    PlayerInputComponent->BindAction("Fire", IE_Released, WeaponComponent, &UGainXWeaponComponent::StopFire);
-    PlayerInputComponent->BindAction("NextWeapon", IE_Pressed, WeaponComponent, &UGainXWeaponComponent::NextWeapon);
-    PlayerInputComponent->BindAction("Reload", IE_Pressed, WeaponComponent, &UGainXWeaponComponent::Reload);
+    GainXInputComponent->BindActionByTag(InputConfig, GainXGameplayTags::InputTag_Weapon_Switch_Next, ETriggerEvent::Started, WeaponComponent, &UGainXWeaponComponent::NextWeapon);
+    GainXInputComponent->BindActionByTag(InputConfig, GainXGameplayTags::InputTag_Weapon_Reload, ETriggerEvent::Started, WeaponComponent, &UGainXWeaponComponent::Reload);
 
-    DECLARE_DELEGATE_OneParam(FZoomInputSignature, bool);
-    PlayerInputComponent->BindAction<FZoomInputSignature>("Zoom", IE_Pressed, WeaponComponent, &UGainXWeaponComponent::Zoom, true);
-    PlayerInputComponent->BindAction<FZoomInputSignature>("Zoom", IE_Released, WeaponComponent, &UGainXWeaponComponent::Zoom, false);
+    // clang-format on
+    //
+    //
+    // PlayerInputComponent->BindAction("Run", IE_Pressed, this, &AGainXPlayerCharacter::OnStartRunning);
+    // PlayerInputComponent->BindAction("Run", IE_Released, this, &AGainXPlayerCharacter::OnStopRunning);
+    // DECLARE_DELEGATE_OneParam(FZoomInputSignature, bool);
+    // PlayerInputComponent->BindAction<FZoomInputSignature>("Zoom", IE_Pressed, WeaponComponent, &UGainXWeaponComponent::Zoom, true);
+    // PlayerInputComponent->BindAction<FZoomInputSignature>("Zoom", IE_Released, WeaponComponent, &UGainXWeaponComponent::Zoom, false);
 }
 
 void AGainXPlayerCharacter::Move(const FInputActionValue& InputActionValue)
