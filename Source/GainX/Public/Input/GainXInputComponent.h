@@ -23,8 +23,7 @@ public:
 };
 
 template <class UserClass, typename FuncType>
-void UGainXInputComponent::BindActionByTag(
-    const UGainXInputConfig* InputConfig, const FGameplayTag& InputTag, ETriggerEvent TriggerEvent, UserClass* Object, FuncType Func)
+void UGainXInputComponent::BindActionByTag(const UGainXInputConfig* InputConfig, const FGameplayTag& InputTag, ETriggerEvent TriggerEvent, UserClass* Object, FuncType Func)
 {
     check(InputConfig);
     if (const UInputAction* IA = InputConfig->FindInputActionForTag(InputTag))

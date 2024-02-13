@@ -6,17 +6,20 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GainXCharacterMovementComponent.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class GAINX_API UGainXCharacterMovementComponent : public UCharacterMovementComponent
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 public:
+    UFUNCTION(BlueprintCallable, Category = "GainX|CharacterMovement")
+    float GetGroundDistance();
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Movement", meta = (ClampMin = "1.5", ClampMax = "10.0"))
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Movement", meta = (ClampMin = "1.5", ClampMax = "10.0"))
     float RunMultiplier = 2.0f;
 
     virtual float GetMaxSpeed() const override;
+
+protected:
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Movement")
+    float GroundTraceDistance = 600.0f;
 };

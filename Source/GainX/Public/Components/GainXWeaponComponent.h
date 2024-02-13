@@ -41,7 +41,7 @@ protected:
     FName WeaponArmorySocketName = "ArmorySocket";
 
     UPROPERTY(EditDefaultsOnly, Category = "Animation")
-    UAnimMontage* EquipAnimMontage;
+    TObjectPtr<UAnimMontage> EquipAnimMontage;
 
     UPROPERTY()
     AGainXBaseWeapon* CurrentWeapon = nullptr;

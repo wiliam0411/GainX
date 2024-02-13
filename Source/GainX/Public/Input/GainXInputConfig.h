@@ -7,7 +7,6 @@
 #include "GainXInputConfig.generated.h"
 
 class UInputAction;
-//struct FGameplayTag;
 
 USTRUCT(BlueprintType)
 struct FGainXInputAction
@@ -16,7 +15,7 @@ struct FGainXInputAction
 
 public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	const UInputAction* InputAction = nullptr;
+    TObjectPtr<const UInputAction> InputAction = nullptr;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Meta = (Categories = "InputTag"))
 	FGameplayTag InputTag;
@@ -30,6 +29,7 @@ class GAINX_API UGainXInputConfig : public UDataAsset
 public:
 	UGainXInputConfig(const FObjectInitializer& ObjectInitializer);
 
+	UFUNCTION(BlueprintCallable, Category = "GainX|Pawn")
 	const UInputAction* FindInputActionForTag(const FGameplayTag& InputTag) const;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Meta = (TitleProperty = "InputAction"))

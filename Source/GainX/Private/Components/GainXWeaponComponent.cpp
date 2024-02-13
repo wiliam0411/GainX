@@ -117,6 +117,7 @@ void UGainXWeaponComponent::PlayAnimMontage(UAnimMontage* Animation)
 
 void UGainXWeaponComponent::InitAnimations()
 {
+    if (WeaponData.Num() == 0) return;
     auto EquipFinishedNotify = AnimUtils::FindNotifyByClass<UGainXEquipFinishedAnimNotify>(EquipAnimMontage);
     if (EquipFinishedNotify)
     {

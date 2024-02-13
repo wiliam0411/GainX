@@ -20,7 +20,6 @@ UGainXHealthComponent::UGainXHealthComponent()
 bool UGainXHealthComponent::TryToAddHealth(float HealthAmount)
 {
     if (IsDead() || IsHealthFull()) return false;
-
     SetHealth(Health + HealthAmount);
     return true;
 }
@@ -33,9 +32,11 @@ bool UGainXHealthComponent::IsHealthFull() const
 void UGainXHealthComponent::BeginPlay()
 {
     Super::BeginPlay();
+
     SetHealth(MaxHealth);
-    AActor* ComponentOwner = GetOwner();
-    if (ComponentOwner)
+
+    // Bind damage delegates
+    if (AActor* ComponentOwner = GetOwner())
     {
         ComponentOwner->OnTakeAnyDamage.AddDynamic(this, &UGainXHealthComponent::OnTakeAnyDamage);
         ComponentOwner->OnTakePointDamage.AddDynamic(this, &UGainXHealthComponent::OnTakePointDamage);
@@ -52,21 +53,23 @@ void UGainXHealthComponent::OnTakeAnyDamage(
 void UGainXHealthComponent::OnTakePointDamage(AActor* DamagedActor, float Damage, AController* InstigatedBy, FVector HitLocation,
     UPrimitiveComponent* FHitComponent, FName BoneName, FVector ShotFromDirection, const UDamageType* DamageType, AActor* DamageCauser)
 {
-    const auto FinalDamage = Damage * GetPointDamageModifaer(DamagedActor, BoneName);
+    const float FinalDamage = Damage * GetPointDamageModifaer(DamagedActor, BoneName);
     ApplyDamage(FinalDamage, InstigatedBy);
-    UE_LOG(LogHealthComponent, Display, TEXT("On point damage: %f, final damage: %f, bone: %s"), Damage, FinalDamage, *BoneName.ToString());
 }
 
 void UGainXHealthComponent::OnTakeRadialDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, FVector Origin,
     const FHitResult& HitInfo, AController* InstigatedBy, AActor* DamageCauser)
 {
-    UE_LOG(LogHealthComponent, Display, TEXT("On radial damage: %f"), Damage);
     ApplyDamage(Damage, InstigatedBy);
 }
 
 void UGainXHealthComponent::HealUpdate()
 {
-    SetHealth(Health + HealModifier);
+    // Calculate the amount of health the character should gain
+    float HealthDelta = HealPerSecond * GetWorld()->GetTimerManager().GetTimerRate(HealTimerHandle);
+    SetHealth(Health + HealthDelta);
+
+    // Stop heal when health is full
     if (IsHealthFull() && GetWorld())
     {
         GetWorld()->GetTimerManager().ClearTimer(HealTimerHandle);
@@ -75,10 +78,62 @@ void UGainXHealthComponent::HealUpdate()
 
 void UGainXHealthComponent::SetHealth(float NewHealth)
 {
-    const auto NextHealth = FMath::Clamp(NewHealth, 0.0f, MaxHealth);
-    const auto HealthDelta = NextHealth - Health;
-    Health = NextHealth;
+    const float ClampedNewHealth = FMath::Clamp(NewHealth, 0.0f, MaxHealth);
+    const float HealthDelta = ClampedNewHealth - Health;
+    Health = ClampedNewHealth;
     OnHealthChanged.Broadcast(Health, HealthDelta);
+}
+
+void UGainXHealthComponent::Killed(AController* KillerController)
+{
+    if (!GetWorld()) return;
+
+    const auto GameMode = Cast<AGainXGameModeBase>(GetWorld()->GetAuthGameMode());
+    if (!GameMode) return;
+
+    const auto Player = Cast<APawn>(GetOwner());
+    if (!Player) return;
+
+    GameMode->Killed(KillerController, Player->Controller);
+}
+
+void UGainXHealthComponent::ApplyDamage(float Damage, AController* InstigatedBy)
+{
+    if (IsDead() || !GetWorld()) return;
+
+    SetHealth(Health - Damage);
+
+    // Clear heal timer if damaged when healing
+    GetWorld()->GetTimerManager().ClearTimer(HealTimerHandle);
+
+    // Character is dead
+    if (IsDead())
+    {
+        Killed(InstigatedBy);
+        OnDeath.Broadcast();
+    }
+
+    // Character is alive, start auto heal
+    else if (AutoHeal)
+    {
+        GetWorld()->GetTimerManager().SetTimer(
+            HealTimerHandle, this, &UGainXHealthComponent::HealUpdate, 1.0f / HealTimerUpdateRate, true, HealDelayTime);
+    }
+
+    PlayCameraShake();
+
+    ReportDamageEvent(Damage, InstigatedBy);
+}
+
+float UGainXHealthComponent::GetPointDamageModifaer(AActor* DamagedActor, const FName& BoneName)
+{
+    const auto Character = Cast<ACharacter>(DamagedActor);
+    if (!Character || !Character->GetMesh() || !Character->GetMesh()->GetBodyInstance(BoneName)) return 1.0f;
+
+    const auto PhysMaterial = Character->GetMesh()->GetBodyInstance(BoneName)->GetSimplePhysicalMaterial();
+    if (!DamageModifaers.Contains(PhysMaterial)) return 1.0f;
+
+    return DamageModifaers[PhysMaterial];
 }
 
 void UGainXHealthComponent::PlayCameraShake()
@@ -94,54 +149,11 @@ void UGainXHealthComponent::PlayCameraShake()
     Controller->PlayerCameraManager->StartCameraShake(CameraShake);
 }
 
-void UGainXHealthComponent::Killed(AController* KillerController)
-{
-    if (!GetWorld()) return;
-
-    const auto GameMode = Cast<AGainXGameModeBase>(GetWorld()->GetAuthGameMode());
-    if (!GameMode) return;
-
-    const auto Player = Cast<APawn>(GetOwner());
-    const auto VictimController = Player ? Player->Controller : nullptr;
-
-    GameMode->Killed(KillerController, VictimController);
-}
-
-void UGainXHealthComponent::ApplyDamage(float Damage, AController* InstigatedBy)
-{
-    if (Health <= 0.0f || IsDead() || !GetWorld()) return;
-    SetHealth(Health - Damage);
-    GetWorld()->GetTimerManager().ClearTimer(HealTimerHandle);
-    if (IsDead())
-    {
-        Killed(InstigatedBy);
-        OnDeath.Broadcast();
-    }
-    else if (AutoHeal)
-    {
-        GetWorld()->GetTimerManager().SetTimer(HealTimerHandle, this, &UGainXHealthComponent::HealUpdate, HealUpdateTime, true, HealDelay);
-    }
-    PlayCameraShake();
-    ReportDamageEvent(Damage, InstigatedBy);
-}
-
-float UGainXHealthComponent::GetPointDamageModifaer(AActor* DamagedActor, const FName& BoneName)
-{
-    const auto Character = Cast<ACharacter>(DamagedActor);
-    if (!Character ||                                      //
-        !Character->GetMesh() ||                           //
-        !Character->GetMesh()->GetBodyInstance(BoneName))  //
-        return 1.0f;
-
-    const auto PhysMaterial = Character->GetMesh()->GetBodyInstance(BoneName)->GetSimplePhysicalMaterial();
-    if (!DamageModifaers.Contains(PhysMaterial)) return 1.0f;
-    return DamageModifaers[PhysMaterial];
-}
-
 void UGainXHealthComponent::ReportDamageEvent(float Damage, AController* InstigatedBy)
 {
     if (!GetWorld() || !InstigatedBy || !InstigatedBy->GetPawn() || !GetOwner()) return;
-    UAISense_Damage::ReportDamageEvent(GetWorld(),    //
+    UAISense_Damage::ReportDamageEvent(               //
+        GetWorld(),                                   //
         GetOwner(),                                   //
         InstigatedBy->GetPawn(),                      //
         Damage,                                       //

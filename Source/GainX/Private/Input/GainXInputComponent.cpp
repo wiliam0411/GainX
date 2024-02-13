@@ -2,6 +2,4 @@
 
 #include "Input/GainXInputComponent.h"
 
-UGainXInputComponent::UGainXInputComponent(const FObjectInitializer& ObjectInitializer)
-{
-}
+UGainXInputComponent::UGainXInputComponent(const FObjectInitializer& ObjectInitializer) {}

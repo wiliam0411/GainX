@@ -26,15 +26,35 @@ void AGainXBaseCharacter::BeginPlay()
     Super::BeginPlay();
 
     OnHealthChanged(HealthComponent->GetHealth(), 0.0f);
+
+    // Death and HealthChanged delegates bind
     HealthComponent->OnDeath.AddUObject(this, &AGainXBaseCharacter::OnDeath);
     HealthComponent->OnHealthChanged.AddUObject(this, &AGainXBaseCharacter::OnHealthChanged);
 
+    // Landing delegate bind
     LandedDelegate.AddDynamic(this, &AGainXBaseCharacter::OnGroundLanded);
 }
 
-void AGainXBaseCharacter::Tick(float DeltaTime)
+void AGainXBaseCharacter::OnDeath()
 {
-    Super::Tick(DeltaTime);
+    UE_LOG(BaseCharacterLog, Display, TEXT("Player %s is dead"), *GetName());
+
+    GetCharacterMovement()->DisableMovement();
+
+    SetLifeSpan(LifeSpanOnDeath);
+
+    // Set collision to ignore mode
+    GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+
+    WeaponComponent->StopFire();
+    WeaponComponent->Zoom(false);
+
+    // Animation of death
+    GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+    GetMesh()->SetSimulatePhysics(true);
+
+    // Play the sound of death
+    UGameplayStatics::PlaySoundAtLocation(GetWorld(), DeathSound, GetActorLocation());
 }
 
 void AGainXBaseCharacter::TurnOff()
@@ -51,45 +71,12 @@ void AGainXBaseCharacter::Reset()
     Super::Reset();
 }
 
-bool AGainXBaseCharacter::IsRunning() const
-{
-    return false;
-}
-
-float AGainXBaseCharacter::GetMovementDirection() const
-{
-    if (GetVelocity().IsZero()) return 0.0f;
-    const auto VelocityNormal = GetVelocity().GetSafeNormal();
-    const auto AngleBetween = FMath::Acos(FVector::DotProduct(GetActorForwardVector(), VelocityNormal));
-    const auto CrossProduct = FVector::CrossProduct(GetActorForwardVector(), VelocityNormal);
-    return FMath::RadiansToDegrees(AngleBetween) * FMath::Sign(CrossProduct.Z);
-}
-
 void AGainXBaseCharacter::SetPlayerColor(const FLinearColor& Color)
 {
-    const auto MatInst = GetMesh()->CreateAndSetMaterialInstanceDynamic(0);
-    if (!MatInst) return;
-
-    MatInst->SetVectorParameterValue(MaterialColorName, Color);
-}
-
-void AGainXBaseCharacter::OnDeath()
-{
-    UE_LOG(BaseCharacterLog, Display, TEXT("Player %s is dead"), *GetName());
-
-    GetCharacterMovement()->DisableMovement();
-
-    SetLifeSpan(LifeSpanOnDeath);
-
-    GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
-
-    WeaponComponent->StopFire();
-    WeaponComponent->Zoom(false);
-
-    GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-    GetMesh()->SetSimulatePhysics(true);
-
-    UGameplayStatics::PlaySoundAtLocation(GetWorld(), DeathSound, GetActorLocation());
+    if (const auto MatInst = GetMesh()->CreateAndSetMaterialInstanceDynamic(0))
+    {
+        MatInst->SetVectorParameterValue(MaterialColorName, Color);
+    }
 }
 
 void AGainXBaseCharacter::OnHealthChanged(float Health, float HealthDelta) {}

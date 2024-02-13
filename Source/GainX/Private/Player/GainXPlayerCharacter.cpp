@@ -12,6 +12,7 @@
 #include "Input/GainXInputComponent.h"
 #include "InputAction.h"
 #include "GainXGameplayTags.h"
+#include "Components/GainXCharacterMovementComponent.h"
 
 AGainXPlayerCharacter::AGainXPlayerCharacter(const FObjectInitializer& ObjInit) : Super(ObjInit)
 {
@@ -47,29 +48,19 @@ void AGainXPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
     }
 
     UGainXInputComponent* GainXInputComponent = Cast<UGainXInputComponent>(PlayerInputComponent);
-
-    // Make sure to set your input component class in the InputSettings->DefaultClasses
-    check(GainXInputComponent);
+    if (!GainXInputComponent) return;
 
     // clang-format off
     GainXInputComponent->BindActionByTag(InputConfig, GainXGameplayTags::InputTag_Move, ETriggerEvent::Triggered, this, &AGainXPlayerCharacter::Move);
     GainXInputComponent->BindActionByTag(InputConfig, GainXGameplayTags::InputTag_Look_Mouse, ETriggerEvent::Triggered, this, &AGainXPlayerCharacter::Look);
     GainXInputComponent->BindActionByTag(InputConfig, GainXGameplayTags::InputTag_Jump, ETriggerEvent::Started, this, &AGainXPlayerCharacter::Jump);
     
-    GainXInputComponent->BindActionByTag(InputConfig, GainXGameplayTags::InputTag_Weapon_Fire, ETriggerEvent::Started, WeaponComponent, &UGainXWeaponComponent::StartFire);
-    GainXInputComponent->BindActionByTag(InputConfig, GainXGameplayTags::InputTag_Weapon_Fire, ETriggerEvent::Completed, WeaponComponent, &UGainXWeaponComponent::StopFire);
+    GainXInputComponent->BindActionByTag(InputConfig, GainXGameplayTags::InputTag_Weapon_Fire, ETriggerEvent::Started, WeaponComponent.Get(), &UGainXWeaponComponent::StartFire);
+    GainXInputComponent->BindActionByTag(InputConfig, GainXGameplayTags::InputTag_Weapon_Fire, ETriggerEvent::Completed, WeaponComponent.Get(), &UGainXWeaponComponent::StopFire);
 
-    GainXInputComponent->BindActionByTag(InputConfig, GainXGameplayTags::InputTag_Weapon_Switch_Next, ETriggerEvent::Started, WeaponComponent, &UGainXWeaponComponent::NextWeapon);
-    GainXInputComponent->BindActionByTag(InputConfig, GainXGameplayTags::InputTag_Weapon_Reload, ETriggerEvent::Started, WeaponComponent, &UGainXWeaponComponent::Reload);
-
+    GainXInputComponent->BindActionByTag(InputConfig, GainXGameplayTags::InputTag_Weapon_Switch_Next, ETriggerEvent::Started, WeaponComponent.Get(), &UGainXWeaponComponent::NextWeapon);
+    GainXInputComponent->BindActionByTag(InputConfig, GainXGameplayTags::InputTag_Weapon_Reload, ETriggerEvent::Started, WeaponComponent.Get(), &UGainXWeaponComponent::Reload);
     // clang-format on
-    //
-    //
-    // PlayerInputComponent->BindAction("Run", IE_Pressed, this, &AGainXPlayerCharacter::OnStartRunning);
-    // PlayerInputComponent->BindAction("Run", IE_Released, this, &AGainXPlayerCharacter::OnStopRunning);
-    // DECLARE_DELEGATE_OneParam(FZoomInputSignature, bool);
-    // PlayerInputComponent->BindAction<FZoomInputSignature>("Zoom", IE_Pressed, WeaponComponent, &UGainXWeaponComponent::Zoom, true);
-    // PlayerInputComponent->BindAction<FZoomInputSignature>("Zoom", IE_Released, WeaponComponent, &UGainXWeaponComponent::Zoom, false);
 }
 
 void AGainXPlayerCharacter::Move(const FInputActionValue& InputActionValue)
@@ -94,23 +85,12 @@ void AGainXPlayerCharacter::Look(const FInputActionValue& InputActionValue)
 
 void AGainXPlayerCharacter::MoveForward(float Amount)
 {
-    IsMovingForward = Amount > 0.0f;
     AddMovementInput(GetActorForwardVector(), Amount);
 }
 
 void AGainXPlayerCharacter::MoveRight(float Amount)
 {
     AddMovementInput(GetActorRightVector(), Amount);
-}
-
-void AGainXPlayerCharacter::OnStartRunning()
-{
-    WantsToRun = true;
-}
-
-void AGainXPlayerCharacter::OnStopRunning()
-{
-    WantsToRun = false;
 }
 
 void AGainXPlayerCharacter::OnCameraCollisionBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
@@ -140,11 +120,6 @@ void AGainXPlayerCharacter::CheckCameraOverlap()
             MeshChildGeometry->SetOwnerNoSee(HideMesh);
         }
     }
-}
-
-bool AGainXPlayerCharacter::IsRunning() const
-{
-    return WantsToRun && IsMovingForward && !GetVelocity().IsZero();
 }
 
 void AGainXPlayerCharacter::BeginPlay()
