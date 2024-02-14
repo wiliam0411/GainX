@@ -21,6 +21,8 @@ class GAINX_API AGainXPlayerCharacter : public AGainXBaseCharacter
 public:
     AGainXPlayerCharacter(const FObjectInitializer& ObjInit);
 
+    virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
 protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Componenets")
     TObjectPtr<USpringArmComponent> SpringArmComponent;
@@ -38,23 +40,23 @@ protected:
     TObjectPtr<UInputMappingContext> InputMapping;
 
     virtual void BeginPlay() override;
+
+    /* Switches player to observer after death */
     virtual void OnDeath() override;
 
-public:
-    virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
 private:
-    // Enhanced Input
+    /* Enhanced input handler function */
     void Move(const FInputActionValue& InputActionValue);
+
+    /* Enhanced input handler function */
     void Look(const FInputActionValue& InputActionValue);
 
-    void MoveForward(float Amount);
-    void MoveRight(float Amount);
-
+    /* Callback function of OnComponentBeginOverlap delegate */
     UFUNCTION()
     void OnCameraCollisionBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
         int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
+    /* Callback function of OnComponentEndOverlap delegate */
     UFUNCTION()
     void OnCameraCollisionEndOverlap(
         UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);

@@ -36,18 +36,15 @@ void AGainXPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
 {
     Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-    if (auto PlayerController = Cast<APlayerController>(Controller))
-    {
-        if (auto Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
-        {
-            if (InputMapping)
-            {
-                Subsystem->AddMappingContext(InputMapping, 0);
-            }
-        }
-    }
+    auto PlayerController = Cast<APlayerController>(Controller);
+    if (!PlayerController) return;
 
-    UGainXInputComponent* GainXInputComponent = Cast<UGainXInputComponent>(PlayerInputComponent);
+    auto Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer());
+    if (!Subsystem || !InputMapping) return;
+
+    Subsystem->AddMappingContext(InputMapping, 0);
+
+    auto GainXInputComponent = Cast<UGainXInputComponent>(PlayerInputComponent);
     if (!GainXInputComponent) return;
 
     // clang-format off
@@ -61,6 +58,24 @@ void AGainXPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
     GainXInputComponent->BindActionByTag(InputConfig, GainXGameplayTags::InputTag_Weapon_Switch_Next, ETriggerEvent::Started, WeaponComponent.Get(), &UGainXWeaponComponent::NextWeapon);
     GainXInputComponent->BindActionByTag(InputConfig, GainXGameplayTags::InputTag_Weapon_Reload, ETriggerEvent::Started, WeaponComponent.Get(), &UGainXWeaponComponent::Reload);
     // clang-format on
+}
+
+void AGainXPlayerCharacter::BeginPlay()
+{
+    Super::BeginPlay();
+
+    // Bind camera overlap delegates
+    CameraCollisionComponent->OnComponentBeginOverlap.AddDynamic(this, &AGainXPlayerCharacter::OnCameraCollisionBeginOverlap);
+    CameraCollisionComponent->OnComponentEndOverlap.AddDynamic(this, &AGainXPlayerCharacter::OnCameraCollisionEndOverlap);
+}
+
+void AGainXPlayerCharacter::OnDeath()
+{
+    Super::OnDeath();
+    if (Controller)
+    {
+        Controller->ChangeState(NAME_Spectating);
+    }
 }
 
 void AGainXPlayerCharacter::Move(const FInputActionValue& InputActionValue)
@@ -83,16 +98,6 @@ void AGainXPlayerCharacter::Look(const FInputActionValue& InputActionValue)
     }
 }
 
-void AGainXPlayerCharacter::MoveForward(float Amount)
-{
-    AddMovementInput(GetActorForwardVector(), Amount);
-}
-
-void AGainXPlayerCharacter::MoveRight(float Amount)
-{
-    AddMovementInput(GetActorRightVector(), Amount);
-}
-
 void AGainXPlayerCharacter::OnCameraCollisionBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
     UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
@@ -109,6 +114,7 @@ void AGainXPlayerCharacter::CheckCameraOverlap()
 {
     const auto HideMesh = CameraCollisionComponent->IsOverlappingComponent(GetCapsuleComponent());
     GetMesh()->SetOwnerNoSee(HideMesh);
+
     TArray<USceneComponent*> MeshChildren;
     GetMesh()->GetChildrenComponents(true, MeshChildren);
 
@@ -119,21 +125,5 @@ void AGainXPlayerCharacter::CheckCameraOverlap()
         {
             MeshChildGeometry->SetOwnerNoSee(HideMesh);
         }
-    }
-}
-
-void AGainXPlayerCharacter::BeginPlay()
-{
-    Super::BeginPlay();
-    CameraCollisionComponent->OnComponentBeginOverlap.AddDynamic(this, &AGainXPlayerCharacter::OnCameraCollisionBeginOverlap);
-    CameraCollisionComponent->OnComponentEndOverlap.AddDynamic(this, &AGainXPlayerCharacter::OnCameraCollisionEndOverlap);
-}
-
-void AGainXPlayerCharacter::OnDeath()
-{
-    Super::OnDeath();
-    if (Controller)
-    {
-        Controller->ChangeState(NAME_Spectating);
     }
 }
