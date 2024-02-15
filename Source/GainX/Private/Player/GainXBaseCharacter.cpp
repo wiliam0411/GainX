@@ -54,7 +54,7 @@ void AGainXBaseCharacter::OnDeath()
     GetMesh()->SetSimulatePhysics(true);
 
     // Play the sound of death
-    UGameplayStatics::PlaySoundAtLocation(GetWorld(), DeathSound, GetActorLocation());
+    UGameplayStatics::PlaySoundAtLocation(GetWorld(), DeathSound.Get(), GetActorLocation());
 }
 
 void AGainXBaseCharacter::TurnOff()
@@ -75,7 +75,7 @@ void AGainXBaseCharacter::SetPlayerColor(const FLinearColor& Color)
 {
     if (const auto MatInst = GetMesh()->CreateAndSetMaterialInstanceDynamic(0))
     {
-        MatInst->SetVectorParameterValue(MaterialColorName, Color);
+        MatInst->SetVectorParameterValue(MaterialColorParameterName, Color);
     }
 }
 
@@ -83,8 +83,12 @@ void AGainXBaseCharacter::OnHealthChanged(float Health, float HealthDelta) {}
 
 void AGainXBaseCharacter::OnGroundLanded(const FHitResult& Hit)
 {
-    const auto FallVelocityZ = -GetVelocity().Z;
-    if (FallVelocityZ < LandedDamageVelocity.X) return;
-    const auto FinalDamage = FMath::GetMappedRangeValueClamped(LandedDamageVelocity, LandedDamage, FallVelocityZ);
-    TakeDamage(FinalDamage, FDamageEvent{}, nullptr, nullptr);
+    const float FallVelocity = -GetVelocity().Z;
+    if (FallVelocity > FallDamageVelocityThreshold)
+    {
+        const float FallDamage =
+            FMath::Clamp(FallDamageMultiplier * (FallVelocity - FallDamageVelocityThreshold), 0.0f, HealthComponent->GetHealth());
+        UE_LOG(BaseCharacterLog, Display, TEXT("Fall damage: %f"), FallDamage);
+        TakeDamage(FallDamage, FPointDamageEvent{}, nullptr, nullptr);
+    }
 }

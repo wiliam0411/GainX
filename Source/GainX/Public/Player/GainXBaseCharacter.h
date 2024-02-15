@@ -25,25 +25,27 @@ protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Componenets")
     TObjectPtr<UGainXWeaponComponent> WeaponComponent;
 
-    /* The time the body disappears after death */
-    UPROPERTY(EditDefaultsOnly, Category = "Damage")
+    /* Time the body disappears after death */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Damage")
     float LifeSpanOnDeath = 5.0f;
 
-    // TODO: переделать систему получения урона от падения
-    UPROPERTY(EditDefaultsOnly, Category = "Damage")
-    FVector2D LandedDamageVelocity = FVector2D(900.0f, 1200.0f);
-
-    UPROPERTY(EditDefaultsOnly, Category = "Damage")
-    FVector2D LandedDamage = FVector2D(10.0f, 100.0f);
-
-    /* Material parameter name for the color */
-    UPROPERTY(EditDefaultsOnly, Category = "Material")
-    FName MaterialColorName = "Paint Color";
-
     /* Death sound cue*/
-    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Sound")
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Damage")
     TObjectPtr<USoundCue> DeathSound;
 
+    /* Fall velociry at which character takes damage */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Damage")
+    float FallDamageVelocityThreshold = 900.0f;
+
+    /* Fall damage multiplier */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Damage")
+    float FallDamageMultiplier = 1.0f;
+
+    /* Material instance parameter name for the color */
+    UPROPERTY(EditDefaultsOnly, Category = "Material")
+    FName MaterialColorParameterName = "Paint Color";
+
+    /* Setting health and binding delegates */
     virtual void BeginPlay() override;
 
     /* Callback function of OnDeath */
@@ -56,7 +58,7 @@ public:
     virtual void TurnOff() override;
     virtual void Reset() override;
 
-    /* Creates and sets up material instance of character mesh */
+    /* Creates and customize material instance of character mesh */
     void SetPlayerColor(const FLinearColor& Color);
 
 private:

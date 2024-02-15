@@ -30,6 +30,8 @@ public:
 
     float GetHealth() const { return Health; }
 
+    float GetMaxHealth() const { return MaxHealth; }
+
     bool TryToAddHealth(float HealthAmount);
 
     bool IsHealthFull() const;

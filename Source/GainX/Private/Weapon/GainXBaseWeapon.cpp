@@ -38,7 +38,8 @@ bool AGainXBaseWeapon::GetPlayerViewPoint(FVector& ViewLocation, FRotator& ViewR
 
     if (GainXCharacter->IsPlayerControlled())
     {
-        const auto Controller = GainXCharacter->GetController<APlayerController>();;
+        const auto Controller = GainXCharacter->GetController<APlayerController>();
+        ;
         if (!Controller) return false;
 
         Controller->GetPlayerViewPoint(ViewLocation, ViewRotation);
@@ -170,10 +171,11 @@ void AGainXBaseWeapon::LogAmmo()
 
 UNiagaraComponent* AGainXBaseWeapon::SpawnMuzzleFX()
 {
-    return UNiagaraFunctionLibrary::SpawnSystemAttached(MuzzleFX,  //
-        WeaponMesh,                                                //
-        MuzzleSocketName,                                          //
-        FVector::ZeroVector,                                       //
-        FRotator::ZeroRotator,                                     //
+    return UNiagaraFunctionLibrary::SpawnSystemAttached(  //
+        MuzzleFX,                                         //
+        WeaponMesh,                                       //
+        MuzzleSocketName,                                 //
+        FVector::ZeroVector,                              //
+        FRotator::ZeroRotator,                            //
         EAttachLocation::SnapToTarget, true);
 }
