@@ -19,4 +19,13 @@ protected:
 
     UPROPERTY(BlueprintReadOnly, Category = "CharacterStateData")
     float GroundDistance = -1.0f;
+
+    UPROPERTY(EditDefaultsOnly, Category = "WeaponSocket")
+    FName LeftHandSocketName = "LeftHand";
+
+    UPROPERTY(BlueprintReadOnly, Category = "WeaponSocket")
+    FTransform LeftHandSocketTransform = FTransform::Identity;
+
+private:
+    FName RightHandBoneName = "hand_r";
 };

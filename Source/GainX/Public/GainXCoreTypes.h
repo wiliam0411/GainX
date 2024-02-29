@@ -30,7 +30,7 @@ struct FWeaponData
     TSubclassOf<AGainXBaseWeapon> WeaponClass;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Weapon")
-    UAnimMontage* ReloadAnimMontage;
+    TObjectPtr<UAnimMontage> ReloadAnimMontage;
 };
 
 USTRUCT(BlueprintType)

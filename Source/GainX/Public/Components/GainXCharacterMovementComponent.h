@@ -10,16 +10,14 @@ UCLASS()
 class GAINX_API UGainXCharacterMovementComponent : public UCharacterMovementComponent
 {
     GENERATED_BODY()
+
 public:
+    /* Calculates distance from character to ground for AnimBP */
     UFUNCTION(BlueprintCallable, Category = "GainX|CharacterMovement")
     float GetGroundDistance();
 
-    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Movement", meta = (ClampMin = "1.5", ClampMax = "10.0"))
-    float RunMultiplier = 2.0f;
-
-    virtual float GetMaxSpeed() const override;
-
 protected:
+    /* Defines length of trace to calculate GroundDistance */
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Movement")
     float GroundTraceDistance = 600.0f;
 };

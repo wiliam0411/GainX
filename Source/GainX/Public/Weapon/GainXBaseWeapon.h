@@ -36,6 +36,8 @@ public:
 
     virtual void Zoom(bool Enabled) {}
 
+    USkeletalMeshComponent* GetWeaponMesh() { return WeaponMesh; }
+
 protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Componenets")
     USkeletalMeshComponent* WeaponMesh;

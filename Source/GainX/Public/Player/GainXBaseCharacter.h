@@ -18,6 +18,9 @@ class GAINX_API AGainXBaseCharacter : public ACharacter
 public:
     AGainXBaseCharacter(const FObjectInitializer& ObjInit);
 
+    UGainXHealthComponent* GetHealthComponent() { return HealthComponent; }
+    UGainXWeaponComponent* GetWeaponComponent() { return WeaponComponent; }
+
 protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Componenets")
     TObjectPtr<UGainXHealthComponent> HealthComponent;

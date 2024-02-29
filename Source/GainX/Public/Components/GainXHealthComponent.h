@@ -84,6 +84,7 @@ private:
     /* Health update function */
     void SetHealth(float NewHealth);
 
+    /* Calls killed method of GameMode class */
     void Killed(AController* KillerController);
 
     /* Apply damage, handling death and heal activation */
@@ -92,10 +93,9 @@ private:
     /* Get damage multiplier for body parts from phys material */
     float GetPointDamageModifaer(AActor* DamagedActor, const FName& BoneName);
 
-    // TODO: only for player character
     /* Shake camera when character takes damage */
     void PlayCameraShake();
 
-    /* TODO:for AI */
+    /* Triggers AI damage sense  */
     void ReportDamageEvent(float Damage, AController* InstigatedBy);
 };

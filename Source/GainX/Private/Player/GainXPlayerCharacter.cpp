@@ -112,18 +112,20 @@ void AGainXPlayerCharacter::OnCameraCollisionEndOverlap(
 
 void AGainXPlayerCharacter::CheckCameraOverlap()
 {
-    const auto HideMesh = CameraCollisionComponent->IsOverlappingComponent(GetCapsuleComponent());
+    // Hide character mesh if it overlaps camera
+    const bool HideMesh = CameraCollisionComponent->IsOverlappingComponent(GetCapsuleComponent());
     GetMesh()->SetOwnerNoSee(HideMesh);
 
+    // Get array of character mesh child components 
     TArray<USceneComponent*> MeshChildren;
     GetMesh()->GetChildrenComponents(true, MeshChildren);
 
+    // Hide child components if it overlaps camera
     for (auto MeshChild : MeshChildren)
     {
         const auto MeshChildGeometry = Cast<UPrimitiveComponent>(MeshChild);
-        if (MeshChildGeometry)
-        {
-            MeshChildGeometry->SetOwnerNoSee(HideMesh);
-        }
+        if (!MeshChildGeometry) continue;
+
+        MeshChildGeometry->SetOwnerNoSee(HideMesh);
     }
 }

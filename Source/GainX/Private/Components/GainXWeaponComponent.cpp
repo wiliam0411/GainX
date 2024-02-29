@@ -11,12 +11,14 @@ DEFINE_LOG_CATEGORY_STATIC(LogWeaponComponent, All, All);
 
 UGainXWeaponComponent::UGainXWeaponComponent()
 {
+    PrimaryComponentTick.bStartWithTickEnabled = false;
     PrimaryComponentTick.bCanEverTick = false;
 }
 
 void UGainXWeaponComponent::BeginPlay()
 {
     Super::BeginPlay();
+
     CurrentWeaponIndex = 0;
     InitAnimations();
     SpawnWeapons();
@@ -67,6 +69,7 @@ void UGainXWeaponComponent::EquipWeapon(int32 WeaponIndex)
         UE_LOG(LogWeaponComponent, Warning, TEXT("Invalid weapon index"));
         return;
     }
+
     ACharacter* Character = Cast<ACharacter>(GetOwner());
     if (!Character) return;
 
@@ -102,8 +105,10 @@ void UGainXWeaponComponent::StopFire()
 
 void UGainXWeaponComponent::NextWeapon()
 {
-    if (!CanEquip()) return;
+    if (!CanEquip() || Weapons.Num() == 0) return;
+
     CurrentWeaponIndex = (CurrentWeaponIndex + 1) % Weapons.Num();
+
     EquipWeapon(CurrentWeaponIndex);
 }
 
@@ -117,17 +122,22 @@ void UGainXWeaponComponent::PlayAnimMontage(UAnimMontage* Animation)
 
 void UGainXWeaponComponent::InitAnimations()
 {
+    // TODO: Temp solution
     if (WeaponData.Num() == 0) return;
+
     auto EquipFinishedNotify = AnimUtils::FindNotifyByClass<UGainXEquipFinishedAnimNotify>(EquipAnimMontage);
+
     if (EquipFinishedNotify)
     {
         EquipFinishedNotify->OnNotified.AddUObject(this, &UGainXWeaponComponent::OnEquipFinished);
     }
+
     else
     {
         UE_LOG(LogWeaponComponent, Error, TEXT("Equip anim notify is forgotten to set"));
         checkNoEntry();
     }
+
     for (auto OneWeaponData : WeaponData)
     {
         auto ReloadFinishedNotify = AnimUtils::FindNotifyByClass<UGainXReloadFinishedAnimNotify>(OneWeaponData.ReloadAnimMontage);
@@ -179,22 +189,18 @@ void UGainXWeaponComponent::Reload()
 
 bool UGainXWeaponComponent::GetWeaponUIData(FWeaponUIData& UIData) const
 {
-    if (CurrentWeapon)
-    {
-        UIData = CurrentWeapon->GetUIData();
-        return true;
-    }
-    return false;
+    if (!CurrentWeapon) return false;
+    
+    UIData = CurrentWeapon->GetUIData();
+    return true;
 }
 
 bool UGainXWeaponComponent::GetWeaponAmmoData(FAmmoData& AmmoData) const
 {
-    if (CurrentWeapon)
-    {
-        AmmoData = CurrentWeapon->GetAmmoData();
-        return true;
-    }
-    return false;
+    if (!CurrentWeapon) return false;
+    
+    AmmoData = CurrentWeapon->GetAmmoData();
+    return true;
 }
 
 bool UGainXWeaponComponent::TryToAddAmmo(TSubclassOf<AGainXBaseWeapon> WeaponType, int32 ClipsAmount)
@@ -252,8 +258,11 @@ void UGainXWeaponComponent::OnEmptyClip(AGainXBaseWeapon* AmmoEmptyWeapon)
 void UGainXWeaponComponent::ChangeClip()
 {
     if (!CanReload()) return;
+
     CurrentWeapon->StopFire();
     CurrentWeapon->ChangeClip();
+
     ReloadAnimInProgress = true;
+
     PlayAnimMontage(CurrentReloadAnimMontage);
 }

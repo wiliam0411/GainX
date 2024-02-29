@@ -39,9 +39,10 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = "Input")
     TObjectPtr<UInputMappingContext> InputMapping;
 
+    /* Bind camera overlap delegates */
     virtual void BeginPlay() override;
 
-    /* Switches player to observer after death */
+    /* Switch player to observer after death */
     virtual void OnDeath() override;
 
 private:
@@ -61,5 +62,6 @@ private:
     void OnCameraCollisionEndOverlap(
         UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
+    /* Hide charcter mesh and its child components if overlap camera */
     void CheckCameraOverlap();
 };

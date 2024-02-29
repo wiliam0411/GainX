@@ -89,9 +89,11 @@ void UGainXHealthComponent::Killed(AController* KillerController)
     if (!GetWorld()) return;
 
     const auto GameMode = Cast<AGainXGameModeBase>(GetWorld()->GetAuthGameMode());
+    check(GameMode);
     if (!GameMode) return;
 
     const auto Player = Cast<APawn>(GetOwner());
+    check(Player);
     if (!Player) return;
 
     GameMode->Killed(KillerController, Player->Controller);
@@ -128,6 +130,7 @@ void UGainXHealthComponent::ApplyDamage(float Damage, AController* InstigatedBy)
 float UGainXHealthComponent::GetPointDamageModifaer(AActor* DamagedActor, const FName& BoneName)
 {
     const auto Character = Cast<ACharacter>(DamagedActor);
+    check(Character);
     if (!Character || !Character->GetMesh() || !Character->GetMesh()->GetBodyInstance(BoneName)) return 1.0f;
 
     const auto PhysMaterial = Character->GetMesh()->GetBodyInstance(BoneName)->GetSimplePhysicalMaterial();
