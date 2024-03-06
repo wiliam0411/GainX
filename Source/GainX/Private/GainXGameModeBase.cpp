@@ -204,8 +204,6 @@ void AGainXGameModeBase::LogPlayerInfo()
 
         const auto PlayerState = Cast<AGainXPlayerState>(Controller->PlayerState);
         if (!PlayerState) continue;
-
-        PlayerState->LogInfo();
     }
 }
 

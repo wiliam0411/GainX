@@ -11,7 +11,9 @@ class USpringArmComponent;
 class USphereComponent;
 class UGainXInputConfig;
 class UInputMappingContext;
+class UGainXAbilitySet;
 struct FInputActionValue;
+struct FGameplayTag;
 
 UCLASS()
 class GAINX_API AGainXPlayerCharacter : public AGainXBaseCharacter
@@ -39,11 +41,17 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = "Input")
     TObjectPtr<UInputMappingContext> InputMapping;
 
+    UPROPERTY(EditDefaultsOnly, Category = "Input")
+    TObjectPtr<UGainXAbilitySet> AbilitySet;
+
     /* Bind camera overlap delegates */
     virtual void BeginPlay() override;
 
     /* Switch player to observer after death */
     virtual void OnDeath() override;
+
+    void Input_AbilityInputTagPressed(FGameplayTag InputTag);
+    void Input_AbilityInputTagReleased(FGameplayTag InputTag);
 
 private:
     /* Enhanced input handler function */
@@ -54,13 +62,12 @@ private:
 
     /* Callback function of OnComponentBeginOverlap delegate */
     UFUNCTION()
-    void OnCameraCollisionBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
-        int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+    void OnCameraCollisionBeginOverlap(
+        UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
     /* Callback function of OnComponentEndOverlap delegate */
     UFUNCTION()
-    void OnCameraCollisionEndOverlap(
-        UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+    void OnCameraCollisionEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
     /* Hide charcter mesh and its child components if overlap camera */
     void CheckCameraOverlap();

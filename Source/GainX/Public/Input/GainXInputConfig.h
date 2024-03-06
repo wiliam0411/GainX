@@ -30,8 +30,14 @@ public:
 	UGainXInputConfig(const FObjectInitializer& ObjectInitializer);
 
 	UFUNCTION(BlueprintCallable, Category = "GainX|Pawn")
-	const UInputAction* FindInputActionForTag(const FGameplayTag& InputTag) const;
+	const UInputAction* FindNativeInputActionForTag(const FGameplayTag& InputTag) const;
+
+	UFUNCTION(BlueprintCallable, Category = "GainX|Pawn")
+    const UInputAction* FindAbilityInputActionForTag(const FGameplayTag& InputTag) const;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Meta = (TitleProperty = "InputAction"))
 	TArray<FGainXInputAction> NativeInputActions;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Meta = (TitleProperty = "InputAction"))
+    TArray<FGainXInputAction> AbilityInputActions;
 };

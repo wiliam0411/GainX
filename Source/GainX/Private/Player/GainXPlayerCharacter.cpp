@@ -7,12 +7,14 @@
 #include "Components/GainXWeaponComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/CapsuleComponent.h"
-
 #include "EnhancedInputSubsystems.h"
 #include "Input/GainXInputComponent.h"
 #include "InputAction.h"
 #include "GainXGameplayTags.h"
 #include "Components/GainXCharacterMovementComponent.h"
+#include "AbilitySystem/GainXAbilitySystemComponent.h"
+#include "GameplayTagContainer.h"
+#include "AbilitySystem/GainXAbilitySet.h"
 
 AGainXPlayerCharacter::AGainXPlayerCharacter(const FObjectInitializer& ObjInit) : Super(ObjInit)
 {
@@ -48,6 +50,9 @@ void AGainXPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
     if (!GainXInputComponent) return;
 
     // clang-format off
+    TArray<uint32> BindHandles;
+	GainXInputComponent->BindAbilityActions(InputConfig, this, &ThisClass::Input_AbilityInputTagPressed, &ThisClass::Input_AbilityInputTagReleased, BindHandles);
+
     GainXInputComponent->BindActionByTag(InputConfig, GainXGameplayTags::InputTag_Move, ETriggerEvent::Triggered, this, &AGainXPlayerCharacter::Move);
     GainXInputComponent->BindActionByTag(InputConfig, GainXGameplayTags::InputTag_Look_Mouse, ETriggerEvent::Triggered, this, &AGainXPlayerCharacter::Look);
     GainXInputComponent->BindActionByTag(InputConfig, GainXGameplayTags::InputTag_Jump, ETriggerEvent::Started, this, &AGainXPlayerCharacter::Jump);
@@ -67,6 +72,8 @@ void AGainXPlayerCharacter::BeginPlay()
     // Bind camera overlap delegates
     CameraCollisionComponent->OnComponentBeginOverlap.AddDynamic(this, &AGainXPlayerCharacter::OnCameraCollisionBeginOverlap);
     CameraCollisionComponent->OnComponentEndOverlap.AddDynamic(this, &AGainXPlayerCharacter::OnCameraCollisionEndOverlap);
+
+    GetGainXPlayerState()->SetAbilitySet(AbilitySet);
 }
 
 void AGainXPlayerCharacter::OnDeath()
@@ -127,5 +134,21 @@ void AGainXPlayerCharacter::CheckCameraOverlap()
         if (!MeshChildGeometry) continue;
 
         MeshChildGeometry->SetOwnerNoSee(HideMesh);
+    }
+}
+
+void AGainXPlayerCharacter::Input_AbilityInputTagPressed(FGameplayTag InputTag)
+{
+    if (UGainXAbilitySystemComponent* GainXASC = GetGainXAbilitySystemComponent())
+    {
+        GainXASC->AbilityInputTagPressed(InputTag);
+    }
+}
+
+void AGainXPlayerCharacter::Input_AbilityInputTagReleased(FGameplayTag InputTag)
+{
+    if (UGainXAbilitySystemComponent* GainXASC = GetGainXAbilitySystemComponent())
+    {
+        GainXASC->AbilityInputTagReleased(InputTag);
     }
 }

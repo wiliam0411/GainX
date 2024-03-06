@@ -1,13 +1,38 @@
 // GainX, All Rights Reserved
 
 #include "Player/GainXPlayerController.h"
+#include "Player/GainXPlayerState.h"
 #include "Components/GainXRespawnComponent.h"
 #include "GainXGameModeBase.h"
 #include "GainXGameInstance.h"
+#include "AbilitySystem/GainXAbilitySystemComponent.h"
 
-AGainXPlayerController::AGainXPlayerController()
+AGainXPlayerController::AGainXPlayerController(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
     RespawnComponent = CreateDefaultSubobject<UGainXRespawnComponent>("RespawnComponent");
+}
+
+AGainXPlayerState* AGainXPlayerController::GetGainXPlayerState() const
+{
+    return CastChecked<AGainXPlayerState>(PlayerState, ECastCheckedType::NullAllowed);
+}
+
+UGainXAbilitySystemComponent* AGainXPlayerController::GetGainXAbilitySystemComponent() const
+{
+    const auto GainXPlayerState = GetGainXPlayerState();
+
+    if (!GainXPlayerState) return nullptr;
+    
+    return GainXPlayerState->GetGainXAbilitySystemComponent();
+}
+
+void AGainXPlayerController::PostProcessInput(const float DeltaTime, const bool bGamePaused) 
+{
+    if (auto GainXASC = GetGainXAbilitySystemComponent())
+    {
+        GainXASC->ProcessAbilityInput(DeltaTime, bGamePaused);
+    }
+    Super::PostProcessInput(DeltaTime, bGamePaused);
 }
 
 void AGainXPlayerController::BeginPlay() 

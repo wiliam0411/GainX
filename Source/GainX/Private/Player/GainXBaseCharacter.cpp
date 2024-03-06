@@ -10,15 +10,34 @@
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
 
+#include "Player/GainXPlayerState.h"
+#include "AbilitySystem/GainXAbilitySystemComponent.h"
+
 DEFINE_LOG_CATEGORY_STATIC(BaseCharacterLog, All, All);
 
-AGainXBaseCharacter::AGainXBaseCharacter(const FObjectInitializer& ObjInit)
-    : Super(ObjInit.SetDefaultSubobjectClass<UGainXCharacterMovementComponent>(ACharacter::CharacterMovementComponentName))
+AGainXBaseCharacter::AGainXBaseCharacter(const FObjectInitializer& ObjInit) : Super(ObjInit.SetDefaultSubobjectClass<UGainXCharacterMovementComponent>(ACharacter::CharacterMovementComponentName))
 {
     PrimaryActorTick.bCanEverTick = true;
 
     HealthComponent = CreateDefaultSubobject<UGainXHealthComponent>("HealthComponent");
     WeaponComponent = CreateDefaultSubobject<UGainXWeaponComponent>("WeaponComponent");
+}
+
+AGainXPlayerState* AGainXBaseCharacter::GetGainXPlayerState()
+{
+    return Cast<AGainXPlayerState>(Controller->PlayerState);
+}
+
+UGainXAbilitySystemComponent* AGainXBaseCharacter::GetGainXAbilitySystemComponent() const
+{
+    auto GainXPlayerState = Cast<AGainXPlayerState>(Controller->PlayerState);
+    if (!GainXPlayerState) return nullptr;
+    return GainXPlayerState->GetGainXAbilitySystemComponent();
+}
+
+UAbilitySystemComponent* AGainXBaseCharacter::GetAbilitySystemComponent() const
+{
+    return GetGainXAbilitySystemComponent();
 }
 
 void AGainXBaseCharacter::BeginPlay()
@@ -86,8 +105,7 @@ void AGainXBaseCharacter::OnGroundLanded(const FHitResult& Hit)
     const float FallVelocity = -GetVelocity().Z;
     if (FallVelocity > FallDamageVelocityThreshold)
     {
-        const float FallDamage =
-            FMath::Clamp(FallDamageMultiplier * (FallVelocity - FallDamageVelocityThreshold), 0.0f, HealthComponent->GetHealth());
+        const float FallDamage = FMath::Clamp(FallDamageMultiplier * (FallVelocity - FallDamageVelocityThreshold), 0.0f, HealthComponent->GetHealth());
         UE_LOG(BaseCharacterLog, Display, TEXT("Fall damage: %f"), FallDamage);
         TakeDamage(FallDamage, FPointDamageEvent{}, nullptr, nullptr);
     }
