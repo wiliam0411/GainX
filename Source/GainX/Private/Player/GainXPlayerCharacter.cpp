@@ -69,6 +69,9 @@ void AGainXPlayerCharacter::BeginPlay()
 {
     Super::BeginPlay();
 
+    auto GainXPS = Cast<AGainXPlayerState>(Controller->PlayerState);
+    InitializeAbilitySystem(GainXPS->GetGainXAbilitySystemComponent(), GainXPS);
+
     // Bind camera overlap delegates
     CameraCollisionComponent->OnComponentBeginOverlap.AddDynamic(this, &AGainXPlayerCharacter::OnCameraCollisionBeginOverlap);
     CameraCollisionComponent->OnComponentEndOverlap.AddDynamic(this, &AGainXPlayerCharacter::OnCameraCollisionEndOverlap);

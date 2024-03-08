@@ -25,6 +25,9 @@ public:
 
     virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+    UPROPERTY(EditDefaultsOnly, Category = "Input")
+    TObjectPtr<UGainXAbilitySet> AbilitySet;
+
 protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Componenets")
     TObjectPtr<USpringArmComponent> SpringArmComponent;
@@ -41,34 +44,31 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = "Input")
     TObjectPtr<UInputMappingContext> InputMapping;
 
-    UPROPERTY(EditDefaultsOnly, Category = "Input")
-    TObjectPtr<UGainXAbilitySet> AbilitySet;
-
-    /* Bind camera overlap delegates */
+    /** Bind camera overlap delegates */
     virtual void BeginPlay() override;
 
-    /* Switch player to observer after death */
+    /** Switch player to observer after death */
     virtual void OnDeath() override;
 
     void Input_AbilityInputTagPressed(FGameplayTag InputTag);
     void Input_AbilityInputTagReleased(FGameplayTag InputTag);
 
 private:
-    /* Enhanced input handler function */
+    /** Enhanced input handler function */
     void Move(const FInputActionValue& InputActionValue);
 
-    /* Enhanced input handler function */
+    /** Enhanced input handler function */
     void Look(const FInputActionValue& InputActionValue);
 
-    /* Callback function of OnComponentBeginOverlap delegate */
+    /** Callback function of OnComponentBeginOverlap delegate */
     UFUNCTION()
     void OnCameraCollisionBeginOverlap(
         UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
-    /* Callback function of OnComponentEndOverlap delegate */
+    /** Callback function of OnComponentEndOverlap delegate */
     UFUNCTION()
     void OnCameraCollisionEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
-    /* Hide charcter mesh and its child components if overlap camera */
+    /** Hide charcter mesh and its child components if overlap camera */
     void CheckCameraOverlap();
 };

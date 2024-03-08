@@ -14,6 +14,8 @@ class GAINX_API UGainXAbilitySystemComponent : public UAbilitySystemComponent
 public:
     UGainXAbilitySystemComponent(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
+	virtual void InitAbilityActorInfo(AActor* InOwnerActor, AActor* InAvatarActor) override;
+
     void AbilityInputTagPressed(const FGameplayTag& InputTag);
     void AbilityInputTagReleased(const FGameplayTag& InputTag);
 
@@ -21,6 +23,9 @@ public:
     void ClearAbilityInput();
 
 protected:
+    virtual void AbilitySpecInputPressed(FGameplayAbilitySpec& Spec) override;
+    virtual void AbilitySpecInputReleased(FGameplayAbilitySpec& Spec) override;
+
     /** Handles to abilities that had their input pressed this frame */
     TArray<FGameplayAbilitySpecHandle> InputPressedSpecHandles;
 

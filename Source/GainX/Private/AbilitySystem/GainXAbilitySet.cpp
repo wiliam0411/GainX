@@ -28,5 +28,6 @@ void UGainXAbilitySet::GiveToAbilitySystem(UGainXAbilitySystemComponent* GainXAS
         AbilitySpec.DynamicAbilityTags.AddTag(AbilityToGrant.InputTag);
 
         const FGameplayAbilitySpecHandle AbilitySpecHandle = GainXASC->GiveAbility(AbilitySpec);
+        UE_LOG(LogTemp, Display, TEXT("Ability has been given"));
     }
 }

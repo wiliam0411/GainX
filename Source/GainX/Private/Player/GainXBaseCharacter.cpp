@@ -13,7 +13,7 @@
 #include "Player/GainXPlayerState.h"
 #include "AbilitySystem/GainXAbilitySystemComponent.h"
 
-DEFINE_LOG_CATEGORY_STATIC(BaseCharacterLog, All, All);
+DEFINE_LOG_CATEGORY_STATIC(LogBaseCharacter, All, All);
 
 AGainXBaseCharacter::AGainXBaseCharacter(const FObjectInitializer& ObjInit) : Super(ObjInit.SetDefaultSubobjectClass<UGainXCharacterMovementComponent>(ACharacter::CharacterMovementComponentName))
 {
@@ -40,6 +40,69 @@ UAbilitySystemComponent* AGainXBaseCharacter::GetAbilitySystemComponent() const
     return GetGainXAbilitySystemComponent();
 }
 
+void AGainXBaseCharacter::InitializeAbilitySystem(UGainXAbilitySystemComponent* InASC, AActor* InOwnerActor)
+{
+    check(InASC);
+    check(InOwnerActor);
+
+    if (AbilitySystemComponent == InASC)
+    {
+        // The ability system component hasn't changed.
+        return;
+    }
+
+    if (AbilitySystemComponent)
+    {
+        // Clean up the old ability system component.
+        UninitializeAbilitySystem();
+    }
+
+    APawn* Pawn = Cast<APawn>(this);
+    AActor* ExistingAvatar = InASC->GetAvatarActor();
+
+    UE_LOG(LogBaseCharacter, Display, TEXT("Setting up ASC [%s] on pawn [%s] owner [%s], existing [%s] "), *GetNameSafe(InASC), *GetNameSafe(Pawn), *GetNameSafe(InOwnerActor),
+        *GetNameSafe(ExistingAvatar));
+
+    if ((ExistingAvatar != nullptr) && (ExistingAvatar != Pawn))
+    {
+        UE_LOG(LogBaseCharacter, Display, TEXT("Existing avatar (authority=%d)"), ExistingAvatar->HasAuthority() ? 1 : 0);
+
+        // There is already a pawn acting as the ASC's avatar, so we need to kick it out
+        // This can happen on clients if they're lagged: their new pawn is spawned + possessed before the dead one is removed
+        // ensure(!ExistingAvatar->HasAuthority());
+    }
+
+    AbilitySystemComponent = InASC;
+    AbilitySystemComponent->InitAbilityActorInfo(InOwnerActor, Pawn);
+}
+
+void AGainXBaseCharacter::UninitializeAbilitySystem()
+{
+    if (!AbilitySystemComponent)
+    {
+        return;
+    }
+
+    if (AbilitySystemComponent->GetAvatarActor() == GetOwner())
+    {
+
+        AbilitySystemComponent->ClearAbilityInput();
+        AbilitySystemComponent->RemoveAllGameplayCues();
+
+        if (AbilitySystemComponent->GetOwnerActor() != nullptr)
+        {
+            AbilitySystemComponent->SetAvatarActor(nullptr);
+        }
+        else
+        {
+            // If the ASC doesn't have a valid owner, we need to clear *all* actor info, not just the avatar pairing
+            AbilitySystemComponent->ClearActorInfo();
+        }
+    }
+
+    AbilitySystemComponent = nullptr;
+}
+
 void AGainXBaseCharacter::BeginPlay()
 {
     Super::BeginPlay();
@@ -56,7 +119,7 @@ void AGainXBaseCharacter::BeginPlay()
 
 void AGainXBaseCharacter::OnDeath()
 {
-    UE_LOG(BaseCharacterLog, Display, TEXT("Player %s is dead"), *GetName());
+    UE_LOG(LogBaseCharacter, Display, TEXT("Player %s is dead"), *GetName());
 
     GetCharacterMovement()->DisableMovement();
 
@@ -106,7 +169,7 @@ void AGainXBaseCharacter::OnGroundLanded(const FHitResult& Hit)
     if (FallVelocity > FallDamageVelocityThreshold)
     {
         const float FallDamage = FMath::Clamp(FallDamageMultiplier * (FallVelocity - FallDamageVelocityThreshold), 0.0f, HealthComponent->GetHealth());
-        UE_LOG(BaseCharacterLog, Display, TEXT("Fall damage: %f"), FallDamage);
+        UE_LOG(LogBaseCharacter, Display, TEXT("Fall damage: %f"), FallDamage);
         TakeDamage(FallDamage, FPointDamageEvent{}, nullptr, nullptr);
     }
 }

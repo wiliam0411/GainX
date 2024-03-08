@@ -6,7 +6,8 @@
 #include "Abilities/GameplayAbility.h"
 #include "GainXGameplayAbility.generated.h"
 
-class AGainXBaseCharacter;
+class AGainXPlayerCharacter;
+class AGainXPlayerController;
 class UGainXAbilitySystemComponent;
 
 UENUM(BlueprintType)
@@ -26,7 +27,7 @@ UCLASS()
 class GAINX_API UGainXGameplayAbility : public UGameplayAbility
 {
     GENERATED_BODY()
-    //friend class UGainXAbilitySystemComponent;
+    friend class UGainXAbilitySystemComponent;
 
 public:
     UGainXGameplayAbility(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
@@ -35,11 +36,20 @@ public:
     UGainXAbilitySystemComponent* GetGainXAbilitySystemComponentFromActorInfo() const;
 
     UFUNCTION(BlueprintCallable, Category = "GainX|Ability")
-    AGainXBaseCharacter* GetGainXCharacterFromActorInfo() const;
+    AGainXPlayerController* GetGainXPlayerControllerFromActorInfo() const;
+
+    UFUNCTION(BlueprintCallable, Category = "GainX|Ability")
+    AGainXPlayerCharacter* GetGainXCharacterFromActorInfo() const;
 
     EGainXAbilityActivationPolicy GetActivationPolicy() const { return ActivationPolicy; }
 
 protected:
+    virtual void OnPawnAvatarSet();
+
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GainX|Ability")
     EGainXAbilityActivationPolicy ActivationPolicy;
+
+    /** Called when the ability system is initialized with a pawn avatar. */
+    UFUNCTION(BlueprintImplementableEvent, Category = Ability, DisplayName = "OnPawnAvatarSet")
+    void K2_OnPawnAvatarSet();
 };

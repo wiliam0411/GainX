@@ -1,6 +1,7 @@
 // GainX, All Rights Reserved
 
 #include "Player/GainXPlayerState.h"
+#include "Player/GainXPlayerCharacter.h"
 #include "AbilitySystemComponent.h"
 #include "AbilitySystem/GainXAbilitySystemComponent.h"
 #include "AbilitySystem/GainXAbilitySet.h"
@@ -34,6 +35,6 @@ void AGainXPlayerState::SetAbilitySet(const UGainXAbilitySet* InAbilitySet)
 void AGainXPlayerState::PostInitializeComponents()
 {
     Super::PostInitializeComponents();
-
     check(AbilitySystemComponent);
+    AbilitySystemComponent->InitAbilityActorInfo(this, GetOwner());
 }

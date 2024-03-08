@@ -34,6 +34,12 @@ public:
     UGainXAbilitySystemComponent* GetGainXAbilitySystemComponent() const;
     virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
+    /** Should be called by the owning pawn to become the avatar of the ability system. */
+    void InitializeAbilitySystem(UGainXAbilitySystemComponent* InASC, AActor* InOwnerActor);
+
+    /** Should be called by the owning pawn to remove itself as the avatar of the ability system. */
+    void UninitializeAbilitySystem();
+
 protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Componenets")
     TObjectPtr<UGainXHealthComponent> HealthComponent;
@@ -81,4 +87,8 @@ private:
     /** Callback function of LandedDelegate */
     UFUNCTION()
     void OnGroundLanded(const FHitResult& Hit);
+
+    /** Pointer to the ability system component that is cached for convenience. */
+    UPROPERTY()
+    TObjectPtr<UGainXAbilitySystemComponent> AbilitySystemComponent;
 };
