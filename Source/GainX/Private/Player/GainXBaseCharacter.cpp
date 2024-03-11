@@ -25,6 +25,7 @@ AGainXBaseCharacter::AGainXBaseCharacter(const FObjectInitializer& ObjInit) : Su
 
 AGainXPlayerState* AGainXBaseCharacter::GetGainXPlayerState()
 {
+    if (!Controller) return nullptr;
     return Cast<AGainXPlayerState>(Controller->PlayerState);
 }
 
@@ -45,35 +46,14 @@ void AGainXBaseCharacter::InitializeAbilitySystem(UGainXAbilitySystemComponent* 
     check(InASC);
     check(InOwnerActor);
 
-    if (AbilitySystemComponent == InASC)
-    {
-        // The ability system component hasn't changed.
-        return;
-    }
+    // The ability system component hasn't changed.
+    if (AbilitySystemComponent == InASC) return;
 
-    if (AbilitySystemComponent)
-    {
-        // Clean up the old ability system component.
-        UninitializeAbilitySystem();
-    }
-
-    APawn* Pawn = Cast<APawn>(this);
-    AActor* ExistingAvatar = InASC->GetAvatarActor();
-
-    UE_LOG(LogBaseCharacter, Display, TEXT("Setting up ASC [%s] on pawn [%s] owner [%s], existing [%s] "), *GetNameSafe(InASC), *GetNameSafe(Pawn), *GetNameSafe(InOwnerActor),
-        *GetNameSafe(ExistingAvatar));
-
-    if ((ExistingAvatar != nullptr) && (ExistingAvatar != Pawn))
-    {
-        UE_LOG(LogBaseCharacter, Display, TEXT("Existing avatar (authority=%d)"), ExistingAvatar->HasAuthority() ? 1 : 0);
-
-        // There is already a pawn acting as the ASC's avatar, so we need to kick it out
-        // This can happen on clients if they're lagged: their new pawn is spawned + possessed before the dead one is removed
-        // ensure(!ExistingAvatar->HasAuthority());
-    }
+    // Clean up the old ability system component if it exists
+    UninitializeAbilitySystem();
 
     AbilitySystemComponent = InASC;
-    AbilitySystemComponent->InitAbilityActorInfo(InOwnerActor, Pawn);
+    AbilitySystemComponent->InitAbilityActorInfo(InOwnerActor, this);
 }
 
 void AGainXBaseCharacter::UninitializeAbilitySystem()
@@ -89,7 +69,7 @@ void AGainXBaseCharacter::UninitializeAbilitySystem()
         AbilitySystemComponent->ClearAbilityInput();
         AbilitySystemComponent->RemoveAllGameplayCues();
 
-        if (AbilitySystemComponent->GetOwnerActor() != nullptr)
+        if (!AbilitySystemComponent->GetOwnerActor())
         {
             AbilitySystemComponent->SetAvatarActor(nullptr);
         }

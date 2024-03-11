@@ -24,7 +24,6 @@ AGainXPlayerController* UGainXGameplayAbility::GetGainXPlayerControllerFromActor
 AGainXPlayerCharacter* UGainXGameplayAbility::GetGainXCharacterFromActorInfo() const
 {
     if (!CurrentActorInfo) return nullptr;
-    UE_LOG(LogTemp, Display, TEXT("AvatarActor is %d"), CurrentActorInfo->AvatarActor.IsValid());
     return Cast<AGainXPlayerCharacter>(CurrentActorInfo->AvatarActor.Get());
 }
 

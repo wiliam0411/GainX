@@ -19,7 +19,7 @@ AGainXPlayerState::AGainXPlayerState(const FObjectInitializer& ObjectInitializer
 
 UAbilitySystemComponent* AGainXPlayerState::GetAbilitySystemComponent() const
 {
-    return AbilitySystemComponent;
+    return GetGainXAbilitySystemComponent();
 }
 
 void AGainXPlayerState::SetAbilitySet(const UGainXAbilitySet* InAbilitySet)
@@ -30,11 +30,4 @@ void AGainXPlayerState::SetAbilitySet(const UGainXAbilitySet* InAbilitySet)
     {
         InAbilitySet->GiveToAbilitySystem(AbilitySystemComponent);
     }
-}
-
-void AGainXPlayerState::PostInitializeComponents()
-{
-    Super::PostInitializeComponents();
-    check(AbilitySystemComponent);
-    AbilitySystemComponent->InitAbilityActorInfo(this, GetOwner());
 }

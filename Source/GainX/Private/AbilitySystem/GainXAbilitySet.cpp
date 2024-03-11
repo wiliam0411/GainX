@@ -21,13 +21,10 @@ void UGainXAbilitySet::GiveToAbilitySystem(UGainXAbilitySystemComponent* GainXAS
         if (!IsValid(AbilityToGrant.Ability)) continue;
 
         UGainXGameplayAbility* AbilityCDO = AbilityToGrant.Ability->GetDefaultObject<UGainXGameplayAbility>();
-
         FGameplayAbilitySpec AbilitySpec(AbilityCDO, AbilityToGrant.AbilityLevel);
-
         AbilitySpec.SourceObject = nullptr;
         AbilitySpec.DynamicAbilityTags.AddTag(AbilityToGrant.InputTag);
 
         const FGameplayAbilitySpecHandle AbilitySpecHandle = GainXASC->GiveAbility(AbilitySpec);
-        UE_LOG(LogTemp, Display, TEXT("Ability has been given"));
     }
 }

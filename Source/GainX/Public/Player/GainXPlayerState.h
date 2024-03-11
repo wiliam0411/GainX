@@ -32,12 +32,10 @@ public:
     int32 GetDeathsNum() const { return DeathsNum; }
 
     UFUNCTION(BlueprintCallable, Category = "GainX|PlayerState")
-    UGainXAbilitySystemComponent* GetGainXAbilitySystemComponent() { return AbilitySystemComponent; }
+    UGainXAbilitySystemComponent* GetGainXAbilitySystemComponent() const { return AbilitySystemComponent; }
     virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
     void SetAbilitySet(const UGainXAbilitySet* InAbilitySet);
-
-    virtual void PostInitializeComponents() override;
 
 private:
     int32 TeamID;

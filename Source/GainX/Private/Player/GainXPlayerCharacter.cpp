@@ -55,7 +55,7 @@ void AGainXPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
 
     GainXInputComponent->BindActionByTag(InputConfig, GainXGameplayTags::InputTag_Move, ETriggerEvent::Triggered, this, &AGainXPlayerCharacter::Move);
     GainXInputComponent->BindActionByTag(InputConfig, GainXGameplayTags::InputTag_Look_Mouse, ETriggerEvent::Triggered, this, &AGainXPlayerCharacter::Look);
-    GainXInputComponent->BindActionByTag(InputConfig, GainXGameplayTags::InputTag_Jump, ETriggerEvent::Started, this, &AGainXPlayerCharacter::Jump);
+    //GainXInputComponent->BindActionByTag(InputConfig, GainXGameplayTags::InputTag_Jump, ETriggerEvent::Started, this, &AGainXPlayerCharacter::Jump);
     
     GainXInputComponent->BindActionByTag(InputConfig, GainXGameplayTags::InputTag_Weapon_Fire, ETriggerEvent::Started, WeaponComponent.Get(), &UGainXWeaponComponent::StartFire);
     GainXInputComponent->BindActionByTag(InputConfig, GainXGameplayTags::InputTag_Weapon_Fire, ETriggerEvent::Completed, WeaponComponent.Get(), &UGainXWeaponComponent::StopFire);

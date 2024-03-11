@@ -35,7 +35,6 @@ void UGainXAbilitySystemComponent::InitAbilityActorInfo(AActor* InOwnerActor, AA
                     UGainXGameplayAbility* GainXAbilityInstance = Cast<UGainXGameplayAbility>(AbilityInstance);
                     if (GainXAbilityInstance)
                     {
-                        // Ability instances may be missing for replays
                         GainXAbilityInstance->OnPawnAvatarSet();
                     }
                 }
@@ -46,19 +45,14 @@ void UGainXAbilitySystemComponent::InitAbilityActorInfo(AActor* InOwnerActor, AA
             }
         }
 
-        // TODO: Register with the global system once we actually have a pawn avatar. We wait until this time since some globally-applied effects may require an avatar.
-
         // TODO: initialize GameplayTagPropertyMap in GainXAnimInstance
     }
 }
 
 void UGainXAbilitySystemComponent::AbilityInputTagPressed(const FGameplayTag& InputTag)
 {
-    if (!InputTag.IsValid())
-    {
-        UE_LOG(LogTemp, Display, TEXT("InputTag %s is not valid"), *InputTag.ToString());
-        return;
-    }
+    if (!InputTag.IsValid()) return;
+
     for (const FGameplayAbilitySpec& AbilitySpec : ActivatableAbilities.Items)
     {
         if (AbilitySpec.Ability && (AbilitySpec.DynamicAbilityTags.HasTagExact(InputTag)))
@@ -71,11 +65,8 @@ void UGainXAbilitySystemComponent::AbilityInputTagPressed(const FGameplayTag& In
 
 void UGainXAbilitySystemComponent::AbilityInputTagReleased(const FGameplayTag& InputTag)
 {
-    if (!InputTag.IsValid())
-    {
-        UE_LOG(LogTemp, Display, TEXT("InputTag %s is not valid"), *InputTag.ToString());
-        return;
-    }
+    if (!InputTag.IsValid()) return;
+
     for (const FGameplayAbilitySpec& AbilitySpec : ActivatableAbilities.Items)
     {
         if (AbilitySpec.Ability && (AbilitySpec.DynamicAbilityTags.HasTagExact(InputTag)))
@@ -88,70 +79,15 @@ void UGainXAbilitySystemComponent::AbilityInputTagReleased(const FGameplayTag& I
 
 void UGainXAbilitySystemComponent::ProcessAbilityInput(float DeltaTime, bool bGamePaused)
 {
-    static TArray<FGameplayAbilitySpecHandle> AbilitiesToActivate;
     AbilitiesToActivate.Reset();
 
-    // Process all abilities that activate when the input is held
-    for (const FGameplayAbilitySpecHandle& SpecHandle : InputHeldSpecHandles)
-    {
-        if (const FGameplayAbilitySpec* AbilitySpec = FindAbilitySpecFromHandle(SpecHandle))
-        {
-            if (AbilitySpec->Ability && !AbilitySpec->IsActive())
-            {
-                const auto GainXAbilityCDO = CastChecked<UGainXGameplayAbility>(AbilitySpec->Ability);
-                if (GainXAbilityCDO->GetActivationPolicy() == EGainXAbilityActivationPolicy::WhileInputActive)
-                {
-                    AbilitiesToActivate.AddUnique(AbilitySpec->Handle);
-                }
-            }
-        }
-    }
+    ProcessInputHeld();
 
-    // Process all abilities that had their input pressed this frame
-    for (const FGameplayAbilitySpecHandle& SpecHandle : InputPressedSpecHandles)
-    {
-        if (FGameplayAbilitySpec* AbilitySpec = FindAbilitySpecFromHandle(SpecHandle))
-        {
-            if (AbilitySpec->Ability)
-            {
-                AbilitySpec->InputPressed = true;
-                if (AbilitySpec->IsActive())
-                {
-                    AbilitySpecInputPressed(*AbilitySpec);
-                }
-                else
-                {
-                    const auto GainXAbilityCDO = CastChecked<UGainXGameplayAbility>(AbilitySpec->Ability);
-                    if (GainXAbilityCDO->GetActivationPolicy() == EGainXAbilityActivationPolicy::OnInputTriggered)
-                    {
-                        AbilitiesToActivate.AddUnique(AbilitySpec->Handle);
-                    }
-                }
-            }
-        }
-    }
+    ProcessInputPressed();
 
-    for (const FGameplayAbilitySpecHandle& AbilitySpecHandle : AbilitiesToActivate)
-    {
-        TryActivateAbility(AbilitySpecHandle);
-    }
+    TryActivateAllAbilities();
 
-    // Process all abilities that had their input released this frame
-    for (const FGameplayAbilitySpecHandle& SpecHandle : InputReleasedSpecHandles)
-    {
-        if (FGameplayAbilitySpec* AbilitySpec = FindAbilitySpecFromHandle(SpecHandle))
-        {
-            if (AbilitySpec->Ability)
-            {
-                AbilitySpec->InputPressed = false;
-                if (AbilitySpec->IsActive())
-                {
-                    UE_LOG(LogGainXAbilitySystemComponent, Display, TEXT("AbilitySpecInputReleased"));
-                    AbilitySpecInputReleased(*AbilitySpec);
-                }
-            }
-        }
-    }
+    ProcessInputReleased();
 
     InputPressedSpecHandles.Reset();
     InputReleasedSpecHandles.Reset();
@@ -164,7 +100,7 @@ void UGainXAbilitySystemComponent::ClearAbilityInput()
     InputHeldSpecHandles.Reset();
 }
 
-void UGainXAbilitySystemComponent::AbilitySpecInputPressed(FGameplayAbilitySpec& Spec) 
+void UGainXAbilitySystemComponent::AbilitySpecInputPressed(FGameplayAbilitySpec& Spec)
 {
     Super::AbilitySpecInputReleased(Spec);
     // We don't support UGameplayAbility::bReplicateInputDirectly.
@@ -176,7 +112,7 @@ void UGainXAbilitySystemComponent::AbilitySpecInputPressed(FGameplayAbilitySpec&
     }
 }
 
-void UGainXAbilitySystemComponent::AbilitySpecInputReleased(FGameplayAbilitySpec& Spec) 
+void UGainXAbilitySystemComponent::AbilitySpecInputReleased(FGameplayAbilitySpec& Spec)
 {
     Super::AbilitySpecInputReleased(Spec);
     // We don't support UGameplayAbility::bReplicateInputDirectly.
@@ -185,5 +121,77 @@ void UGainXAbilitySystemComponent::AbilitySpecInputReleased(FGameplayAbilitySpec
     {
         // Invoke the InputReleased event. This is not replicated here. If someone is listening, they may replicate the InputReleased event to the server.
         InvokeReplicatedEvent(EAbilityGenericReplicatedEvent::InputReleased, Spec.Handle, Spec.ActivationInfo.GetActivationPredictionKey());
+    }
+}
+
+void UGainXAbilitySystemComponent::ProcessInputHeld()
+{
+    for (const FGameplayAbilitySpecHandle& SpecHandle : InputHeldSpecHandles)
+    {
+        const FGameplayAbilitySpec* AbilitySpec = FindAbilitySpecFromHandle(SpecHandle);
+        if (!AbilitySpec || !AbilitySpec->Ability || AbilitySpec->IsActive())
+        {
+            continue;
+        }
+
+        const UGainXGameplayAbility* GainXAbilityCDO = CastChecked<UGainXGameplayAbility>(AbilitySpec->Ability);
+        if (GainXAbilityCDO->GetActivationPolicy() == EGainXAbilityActivationPolicy::WhileInputActive)
+        {
+            AbilitiesToActivate.AddUnique(AbilitySpec->Handle);
+        }
+    }
+}
+
+void UGainXAbilitySystemComponent::ProcessInputPressed()
+{
+    for (const FGameplayAbilitySpecHandle& SpecHandle : InputPressedSpecHandles)
+    {
+        FGameplayAbilitySpec* AbilitySpec = FindAbilitySpecFromHandle(SpecHandle);
+        if (!AbilitySpec || !AbilitySpec->Ability)
+        {
+            continue;
+        }
+
+        AbilitySpec->InputPressed = true;
+
+        if (AbilitySpec->IsActive())
+        {
+            AbilitySpecInputPressed(*AbilitySpec);
+            continue;
+        }
+
+        const UGainXGameplayAbility* GainXAbilityCDO = CastChecked<UGainXGameplayAbility>(AbilitySpec->Ability);
+        if (GainXAbilityCDO->GetActivationPolicy() == EGainXAbilityActivationPolicy::OnInputTriggered)
+        {
+            AbilitiesToActivate.AddUnique(AbilitySpec->Handle);
+        }
+    }
+}
+
+void UGainXAbilitySystemComponent::ProcessInputReleased()
+{
+    for (const FGameplayAbilitySpecHandle& SpecHandle : InputReleasedSpecHandles)
+    {
+        FGameplayAbilitySpec* AbilitySpec = FindAbilitySpecFromHandle(SpecHandle);
+
+        if (!AbilitySpec || !AbilitySpec->Ability)
+        {
+            continue;
+        }
+
+        AbilitySpec->InputPressed = false;
+
+        if (AbilitySpec->IsActive())
+        {
+            AbilitySpecInputReleased(*AbilitySpec);
+        }
+    }
+}
+
+void UGainXAbilitySystemComponent::TryActivateAllAbilities() 
+{
+    for (const FGameplayAbilitySpecHandle& AbilitySpecHandle : AbilitiesToActivate)
+    {
+        TryActivateAbility(AbilitySpecHandle);
     }
 }

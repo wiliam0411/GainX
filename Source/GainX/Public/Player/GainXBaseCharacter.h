@@ -34,10 +34,10 @@ public:
     UGainXAbilitySystemComponent* GetGainXAbilitySystemComponent() const;
     virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
-    /** Should be called by the owning pawn to become the avatar of the ability system. */
+    /** Should be called by the owning pawn to become the avatar of the ability system */
     void InitializeAbilitySystem(UGainXAbilitySystemComponent* InASC, AActor* InOwnerActor);
 
-    /** Should be called by the owning pawn to remove itself as the avatar of the ability system. */
+    /** Should be called by the owning pawn to remove itself as the avatar of the ability system */
     void UninitializeAbilitySystem();
 
 protected:
@@ -88,7 +88,7 @@ private:
     UFUNCTION()
     void OnGroundLanded(const FHitResult& Hit);
 
-    /** Pointer to the ability system component that is cached for convenience. */
+    /** Pointer to the ability system component that is cached for convenience */
     UPROPERTY()
     TObjectPtr<UGainXAbilitySystemComponent> AbilitySystemComponent;
 };
