@@ -12,41 +12,7 @@ UGainXAbilitySystemComponent::UGainXAbilitySystemComponent(const FObjectInitiali
 
 void UGainXAbilitySystemComponent::InitAbilityActorInfo(AActor* InOwnerActor, AActor* InAvatarActor)
 {
-    FGameplayAbilityActorInfo* ActorInfo = AbilityActorInfo.Get();
-    check(ActorInfo);
-    check(InOwnerActor);
-
-    const bool bHasNewPawnAvatar = Cast<APawn>(InAvatarActor) && (InAvatarActor != ActorInfo->AvatarActor);
-
     Super::InitAbilityActorInfo(InOwnerActor, InAvatarActor);
-
-    if (bHasNewPawnAvatar)
-    {
-        // Notify all abilities that a new pawn avatar has been set
-        for (const FGameplayAbilitySpec& AbilitySpec : ActivatableAbilities.Items)
-        {
-            UGainXGameplayAbility* GainXAbilityCDO = CastChecked<UGainXGameplayAbility>(AbilitySpec.Ability);
-
-            if (GainXAbilityCDO->GetInstancingPolicy() != EGameplayAbilityInstancingPolicy::NonInstanced)
-            {
-                TArray<UGameplayAbility*> Instances = AbilitySpec.GetAbilityInstances();
-                for (UGameplayAbility* AbilityInstance : Instances)
-                {
-                    UGainXGameplayAbility* GainXAbilityInstance = Cast<UGainXGameplayAbility>(AbilityInstance);
-                    if (GainXAbilityInstance)
-                    {
-                        GainXAbilityInstance->OnPawnAvatarSet();
-                    }
-                }
-            }
-            else
-            {
-                GainXAbilityCDO->OnPawnAvatarSet();
-            }
-        }
-
-        // TODO: initialize GameplayTagPropertyMap in GainXAnimInstance
-    }
 }
 
 void UGainXAbilitySystemComponent::AbilityInputTagPressed(const FGameplayTag& InputTag)
@@ -77,7 +43,7 @@ void UGainXAbilitySystemComponent::AbilityInputTagReleased(const FGameplayTag& I
     }
 }
 
-void UGainXAbilitySystemComponent::ProcessAbilityInput(float DeltaTime, bool bGamePaused)
+void UGainXAbilitySystemComponent::ProcessAbilityInput()
 {
     AbilitiesToActivate.Reset();
 

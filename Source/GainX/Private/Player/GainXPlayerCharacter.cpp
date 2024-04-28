@@ -49,34 +49,23 @@ void AGainXPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
     auto GainXInputComponent = Cast<UGainXInputComponent>(PlayerInputComponent);
     if (!GainXInputComponent) return;
 
-    // clang-format off
     TArray<uint32> BindHandles;
-	GainXInputComponent->BindAbilityActions(InputConfig, this, &ThisClass::Input_AbilityInputTagPressed, &ThisClass::Input_AbilityInputTagReleased, BindHandles);
+    GainXInputComponent->BindAbilityActions(InputConfig, this, &ThisClass::Input_AbilityInputTagPressed, &ThisClass::Input_AbilityInputTagReleased, BindHandles);
 
     GainXInputComponent->BindActionByTag(InputConfig, GainXGameplayTags::InputTag_Move, ETriggerEvent::Triggered, this, &AGainXPlayerCharacter::Move);
     GainXInputComponent->BindActionByTag(InputConfig, GainXGameplayTags::InputTag_Look_Mouse, ETriggerEvent::Triggered, this, &AGainXPlayerCharacter::Look);
-    //GainXInputComponent->BindActionByTag(InputConfig, GainXGameplayTags::InputTag_Jump, ETriggerEvent::Started, this, &AGainXPlayerCharacter::Jump);
-    
-    GainXInputComponent->BindActionByTag(InputConfig, GainXGameplayTags::InputTag_Weapon_Fire, ETriggerEvent::Started, WeaponComponent.Get(), &UGainXWeaponComponent::StartFire);
-    GainXInputComponent->BindActionByTag(InputConfig, GainXGameplayTags::InputTag_Weapon_Fire, ETriggerEvent::Completed, WeaponComponent.Get(), &UGainXWeaponComponent::StopFire);
 
     GainXInputComponent->BindActionByTag(InputConfig, GainXGameplayTags::InputTag_Weapon_Switch_Next, ETriggerEvent::Started, WeaponComponent.Get(), &UGainXWeaponComponent::NextWeapon);
     GainXInputComponent->BindActionByTag(InputConfig, GainXGameplayTags::InputTag_Weapon_Reload, ETriggerEvent::Started, WeaponComponent.Get(), &UGainXWeaponComponent::Reload);
-    // clang-format on
 }
 
 void AGainXPlayerCharacter::BeginPlay()
 {
     Super::BeginPlay();
-
-    auto GainXPS = Cast<AGainXPlayerState>(Controller->PlayerState);
-    InitializeAbilitySystem(GainXPS->GetGainXAbilitySystemComponent(), GainXPS);
-
+    
     // Bind camera overlap delegates
     CameraCollisionComponent->OnComponentBeginOverlap.AddDynamic(this, &AGainXPlayerCharacter::OnCameraCollisionBeginOverlap);
     CameraCollisionComponent->OnComponentEndOverlap.AddDynamic(this, &AGainXPlayerCharacter::OnCameraCollisionEndOverlap);
-
-    GetGainXPlayerState()->SetAbilitySet(AbilitySet);
 }
 
 void AGainXPlayerCharacter::OnDeath()
@@ -108,14 +97,13 @@ void AGainXPlayerCharacter::Look(const FInputActionValue& InputActionValue)
     }
 }
 
-void AGainXPlayerCharacter::OnCameraCollisionBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-    UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+void AGainXPlayerCharacter::OnCameraCollisionBeginOverlap(
+    UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
     CheckCameraOverlap();
 }
 
-void AGainXPlayerCharacter::OnCameraCollisionEndOverlap(
-    UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+void AGainXPlayerCharacter::OnCameraCollisionEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
     CheckCameraOverlap();
 }
@@ -126,7 +114,7 @@ void AGainXPlayerCharacter::CheckCameraOverlap()
     const bool HideMesh = CameraCollisionComponent->IsOverlappingComponent(GetCapsuleComponent());
     GetMesh()->SetOwnerNoSee(HideMesh);
 
-    // Get array of character mesh child components 
+    // Get array of character mesh child components
     TArray<USceneComponent*> MeshChildren;
     GetMesh()->GetChildrenComponents(true, MeshChildren);
 

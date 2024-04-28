@@ -25,9 +25,6 @@ public:
 
     virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-    UPROPERTY(EditDefaultsOnly, Category = "Input")
-    TObjectPtr<UGainXAbilitySet> AbilitySet;
-
 protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Componenets")
     TObjectPtr<USpringArmComponent> SpringArmComponent;

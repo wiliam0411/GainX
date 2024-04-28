@@ -5,11 +5,17 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "GainXCoreTypes.h"
-#include "Kismet/KismetMathLibrary.h"
+#include "AbilitySystem/Attributes/GainXHealthSet.h"
 #include "GainXHealthComponent.generated.h"
 
+class AGainXBaseCharacter;
 class UCameraShakeBase;
 class UPhysicalMaterial;
+class UGainXAbilitySystemComponent;
+class UGainXHealthSet;
+struct FGameplayEffectSpec;
+
+DECLARE_MULTICAST_DELEGATE_FourParams(FGainXHealth_AttributeChanged, UGainXHealthComponent*, float, float, AActor*);
 
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class GAINX_API UGainXHealthComponent : public UActorComponent
@@ -17,78 +23,56 @@ class GAINX_API UGainXHealthComponent : public UActorComponent
     GENERATED_BODY()
 
 public:
-    UGainXHealthComponent();
+    UGainXHealthComponent(const FObjectInitializer& ObjectInitializer);
 
     FOnDeathSignature OnDeath;
     FOnHealthChangedSignature OnHealthChanged;
 
-    UFUNCTION(BlueprintCallable, Category = "Health")
-    bool IsDead() const { return FMath::IsNearlyZero(Health) || Health < 0.0f; }
+    /** Returns the health component if one exists on the specified actor */
+    UFUNCTION(BlueprintCallable, Category = "GainX|Health")
+    static UGainXHealthComponent* FindHealthComponent(const AActor* Actor);
+
+    /** Initialize the component using an ability system component */
+    UFUNCTION(BlueprintCallable, Category = "GainX|Health")
+    void InitializeWithAbilitySystem(UGainXAbilitySystemComponent* InASC);
+
+    /** Uninitialize the component, clearing any references to the ability system */
+    UFUNCTION(BlueprintCallable, Category = "GainX|Health")
+    void UninitializeFromAbilitySystem();
+
+    /** Returns the current health value */
+    UFUNCTION(BlueprintCallable, Category = "GainX|Health")
+    float GetHealth() const;
+
+    /** Returns the current maximum health value */
+    UFUNCTION(BlueprintCallable, Category = "GainX|Health")
+    float GetMaxHealth() const;
+
+    /** Returns the current health in the range [0.0, 1.0] */
+    UFUNCTION(BlueprintCallable, Category = "GainX|Health")
+    float GetHealthNormalized() const;
 
     UFUNCTION(BlueprintCallable, Category = "Health")
-    float GetHealthPercent() const { return UKismetMathLibrary::SafeDivide(Health, MaxHealth); }
-
-    float GetHealth() const { return Health; }
-
-    float GetMaxHealth() const { return MaxHealth; }
-
-    bool TryToAddHealth(float HealthAmount);
+    bool IsDead() const;
 
     bool IsHealthFull() const;
 
 protected:
-    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Health", meta = (ClampMin = "0.0", ClampMax = "1000.0"))
-    float MaxHealth = 100.0f;
-
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Health");
     TMap<TObjectPtr<UPhysicalMaterial>, float> DamageModifaers;
-
-    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Heal")
-    bool AutoHeal = true;
-
-    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Heal", meta = (EditCondition = "AutoHeal"))
-    float HealDelayTime = 3.0f;
-
-    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Heal", meta = (EditCondition = "AutoHeal"))
-    float HealPerSecond = 5.0f;
-
-    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Heal", meta = (ClampMin = "0.1", ClampMax = "300.0", EditCondition = "AutoHeal"))
-    float HealTimerUpdateRate = 60.0f;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "VFX")
     TSubclassOf<UCameraShakeBase> CameraShake;
 
-    virtual void BeginPlay() override;
+    virtual void HandleHealthChanged(AActor* DamageInstigator, AActor* DamageCauser, const FGameplayEffectSpec* DamageEffectSpec, float DamageMagnitude, float OldValue, float NewValue);
+    virtual void HandleMaxHealthChanged(AActor* DamageInstigator, AActor* DamageCauser, const FGameplayEffectSpec* DamageEffectSpec, float DamageMagnitude, float OldValue, float NewValue);
+    virtual void HandleOutOfHealth(AActor* DamageInstigator, AActor* DamageCauser, const FGameplayEffectSpec* DamageEffectSpec, float DamageMagnitude, float OldValue, float NewValue);
+
+    virtual void OnUnregister() override;
 
 private:
-    float Health = 0.0f;
-
-    FTimerHandle HealTimerHandle;
-
-    UFUNCTION()
-    void OnTakeAnyDamage(
-        AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
-
-    UFUNCTION()
-    void OnTakePointDamage(AActor* DamagedActor, float Damage, class AController* InstigatedBy, FVector HitLocation,
-        class UPrimitiveComponent* FHitComponent, FName BoneName, FVector ShotFromDirection, const class UDamageType* DamageType,
-        AActor* DamageCauser);
-
-    UFUNCTION()
-    void OnTakeRadialDamage(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, FVector Origin,
-        const FHitResult& HitInfo, class AController* InstigatedBy, AActor* DamageCauser);
-
-    /* Callback function of HealTimerHandle */
-    void HealUpdate();
-
-    /* Health update function */
-    void SetHealth(float NewHealth);
-
     /* Calls killed method of GameMode class */
     void Killed(AController* KillerController);
-
-    /* Apply damage, handling death and heal activation */
-    void ApplyDamage(float Damage, AController* InstigatedBy);
 
     /* Get damage multiplier for body parts from phys material */
     float GetPointDamageModifaer(AActor* DamagedActor, const FName& BoneName);
@@ -98,4 +82,11 @@ private:
 
     /* Triggers AI damage sense  */
     void ReportDamageEvent(float Damage, AController* InstigatedBy);
+
+protected:
+    UPROPERTY()
+    TObjectPtr<UGainXAbilitySystemComponent> AbilitySystemComponent;
+
+    UPROPERTY()
+    TObjectPtr<const UGainXHealthSet> HealthSet;
 };

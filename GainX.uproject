@@ -13,7 +13,9 @@
 				"UMG",
 				"AIModule",
 				"EnhancedInput",
-				"GameplayAbilities"
+				"GameplayAbilities",
+				"CoreUObject",
+				"ModularGameplay"
 			]
 		}
 	],
@@ -47,6 +49,14 @@
 		},
 		{
 			"Name": "AbilitySystemGameFeatureActions",
+			"Enabled": true
+		},
+		{
+			"Name": "PoseSearch",
+			"Enabled": true
+		},
+		{
+			"Name": "MotionTrajectory",
 			"Enabled": true
 		}
 	]

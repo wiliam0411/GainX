@@ -6,10 +6,14 @@
 #include "GainXGameModeBase.h"
 #include "GainXGameInstance.h"
 #include "AbilitySystem/GainXAbilitySystemComponent.h"
+#include "Equipment/GainXQuickBarComponent.h"
+#include "Inventory/GainXInventoryManagerComponent.h"
 
 AGainXPlayerController::AGainXPlayerController(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
     RespawnComponent = CreateDefaultSubobject<UGainXRespawnComponent>("RespawnComponent");
+    QuickBarComponent = CreateDefaultSubobject<UGainXQuickBarComponent>("QuickBarComponent");
+    InventoryManagerComponent = CreateDefaultSubobject<UGainXInventoryManagerComponent>("InventoryManagerComponent");
 }
 
 AGainXPlayerState* AGainXPlayerController::GetGainXPlayerState() const
@@ -17,21 +21,8 @@ AGainXPlayerState* AGainXPlayerController::GetGainXPlayerState() const
     return CastChecked<AGainXPlayerState>(PlayerState, ECastCheckedType::NullAllowed);
 }
 
-UGainXAbilitySystemComponent* AGainXPlayerController::GetGainXAbilitySystemComponent() const
-{
-    const auto GainXPlayerState = GetGainXPlayerState();
-
-    if (!GainXPlayerState) return nullptr;
-    
-    return GainXPlayerState->GetGainXAbilitySystemComponent();
-}
-
 void AGainXPlayerController::PostProcessInput(const float DeltaTime, const bool bGamePaused) 
 {
-    if (auto GainXASC = GetGainXAbilitySystemComponent())
-    {
-        GainXASC->ProcessAbilityInput(DeltaTime, bGamePaused);
-    }
     Super::PostProcessInput(DeltaTime, bGamePaused);
 }
 
@@ -58,10 +49,6 @@ void AGainXPlayerController::OnPossess(APawn* InPawn)
 void AGainXPlayerController::SetupInputComponent()
 {
     Super::SetupInputComponent();
-
-    if (!InputComponent) return;
-    InputComponent->BindAction("PauseGame", IE_Pressed, this, &AGainXPlayerController::OnPauseGame);
-    InputComponent->BindAction("Mute", IE_Pressed, this, &AGainXPlayerController::OnMuteSound);
 }
 
 void AGainXPlayerController::OnPauseGame()

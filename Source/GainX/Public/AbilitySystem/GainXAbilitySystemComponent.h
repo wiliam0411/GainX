@@ -24,7 +24,7 @@ public:
     void AbilityInputTagReleased(const FGameplayTag& InputTag);
 
     /** Activates ability according to their activation policy */
-    void ProcessAbilityInput(float DeltaTime, bool bGamePaused);
+    void ProcessAbilityInput();
 
     /** Clears Input Handles arrays */
     void ClearAbilityInput();

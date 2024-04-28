@@ -6,6 +6,7 @@
 #include "GainXUtils.h"
 #include "Components/ProgressBar.h"
 #include "Player/GainXPlayerState.h"
+#include "GameplayEffect.h"
 
 void UGainXPlayerHUDWidget::NativeOnInitialized()
 {
@@ -23,14 +24,14 @@ void UGainXPlayerHUDWidget::OnNewPawn(APawn* NewPawn)
     const auto HealthComponent = GainXUtils::GetGainXPlayerComponent<UGainXHealthComponent>(NewPawn);
     if (HealthComponent)
     {
-        HealthComponent->OnHealthChanged.AddUObject(this, &UGainXPlayerHUDWidget::OnHealthChanged);
+        HealthComponent->OnHealthChanged.AddUObject(this, &ThisClass::OnHealthChanged);
     }
     UpdateHealthBar();
 }
 
-void UGainXPlayerHUDWidget::OnHealthChanged(float Health, float HealthDelta)
+void UGainXPlayerHUDWidget::OnHealthChanged(float NewValue, float Delta)
 {
-    if (HealthDelta < 0.0f)
+    if (Delta < 0.0f)
     {
         OnTakeDamage();
 
@@ -44,10 +45,10 @@ void UGainXPlayerHUDWidget::OnHealthChanged(float Health, float HealthDelta)
 
 float UGainXPlayerHUDWidget::GetHealthPercent() const
 {
-    const auto HealthComponent = GainXUtils::GetGainXPlayerComponent<UGainXHealthComponent>(GetOwningPlayerPawn());
+    const auto HealthComponent = UGainXHealthComponent::FindHealthComponent(GetOwningPlayerPawn());
     if (!HealthComponent) return 0.0f;
 
-    return HealthComponent->GetHealthPercent();
+    return HealthComponent->GetHealthNormalized();
 }
 
 bool UGainXPlayerHUDWidget::GetWeaponUIData(FWeaponUIData& UIData) const
@@ -68,7 +69,7 @@ bool UGainXPlayerHUDWidget::GetWeaponAmmoData(FAmmoData& AmmoData) const
 
 bool UGainXPlayerHUDWidget::IsPlayerAlive() const
 {
-    const auto HealthComponent = GainXUtils::GetGainXPlayerComponent<UGainXHealthComponent>(GetOwningPlayerPawn());
+    const auto HealthComponent = UGainXHealthComponent::FindHealthComponent(GetOwningPlayerPawn());
     return HealthComponent && !HealthComponent->IsDead();
 }
 

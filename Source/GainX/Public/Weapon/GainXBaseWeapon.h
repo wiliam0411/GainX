@@ -62,6 +62,7 @@ protected:
 
     virtual void BeginPlay() override;
 
+    UFUNCTION(BlueprintCallable, Category = "GainX|Weapon")
     virtual void MakeShot();
 
     virtual bool GetTraceData(FVector& TraceStart, FVector& TraceEnd) const;

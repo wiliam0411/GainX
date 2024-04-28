@@ -10,9 +10,10 @@
 class UAbilitySystemComponent;
 class UGainXAbilitySystemComponent;
 class UGainXAbilitySet;
+class UGainXHealthSet;
 
 UCLASS(Config = Game)
-class GAINX_API AGainXPlayerState : public APlayerState, public IAbilitySystemInterface
+class GAINX_API AGainXPlayerState : public APlayerState
 {
     GENERATED_BODY()
 
@@ -31,19 +32,10 @@ public:
     void AddDeaths() { ++DeathsNum; }
     int32 GetDeathsNum() const { return DeathsNum; }
 
-    UFUNCTION(BlueprintCallable, Category = "GainX|PlayerState")
-    UGainXAbilitySystemComponent* GetGainXAbilitySystemComponent() const { return AbilitySystemComponent; }
-    virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
-
-    void SetAbilitySet(const UGainXAbilitySet* InAbilitySet);
-
 private:
     int32 TeamID;
     FLinearColor TeamColor;
 
     int32 KillsNum = 0;
     int32 DeathsNum = 0;
-
-    UPROPERTY(VisibleAnywhere, Category = "GainX|PlayerState")
-    TObjectPtr<UGainXAbilitySystemComponent> AbilitySystemComponent;
 };

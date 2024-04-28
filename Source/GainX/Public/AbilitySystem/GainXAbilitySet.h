@@ -34,9 +34,9 @@ class GAINX_API UGainXAbilitySet : public UPrimaryDataAsset
 public:
     UGainXAbilitySet(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
-    void GiveToAbilitySystem(UGainXAbilitySystemComponent* GainXASC) const;
+    void GiveToAbilitySystem(UGainXAbilitySystemComponent* GainXASC, UObject* SourceObject = nullptr) const;
 
 protected:
     UPROPERTY(EditDefaultsOnly, Category = "Gameplay Abilities", meta = (TitleProperty = Ability))
-    TArray<FGainXAbilitySet_GameplayAbility> GameplayAbilities;
+    TArray<FGainXAbilitySet_GameplayAbility> GrantedGameplayAbilities;
 };

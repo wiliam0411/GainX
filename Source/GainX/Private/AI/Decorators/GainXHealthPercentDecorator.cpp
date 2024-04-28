@@ -18,5 +18,5 @@ bool UGainXHealthPercentDecorator::CalculateRawConditionValue(UBehaviorTreeCompo
     const auto HealthComponent = GainXUtils::GetGainXPlayerComponent<UGainXHealthComponent>(Controller->GetPawn());
     if (!HealthComponent || HealthComponent->IsDead()) return false;
 
-    return HealthComponent->GetHealthPercent() <= HealthPercent;
+    return HealthComponent->GetHealthNormalized() <= HealthPercent;
 }

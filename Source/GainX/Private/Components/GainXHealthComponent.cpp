@@ -9,79 +9,142 @@
 #include "GainXGameModeBase.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
 #include "Perception/AISense_Damage.h"
+#include "AbilitySystem/GainXAbilitySystemComponent.h"
+#include "AbilitySystem/Attributes/GainXHealthSet.h"
+#include "Kismet/KismetMathLibrary.h"
+#include "Player/GainXBaseCharacter.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogHealthComponent, All, All)
 
-UGainXHealthComponent::UGainXHealthComponent()
+UGainXHealthComponent::UGainXHealthComponent(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
+    PrimaryComponentTick.bStartWithTickEnabled = false;
     PrimaryComponentTick.bCanEverTick = false;
+
+    AbilitySystemComponent = nullptr;
+    HealthSet = nullptr;
 }
 
-bool UGainXHealthComponent::TryToAddHealth(float HealthAmount)
+UGainXHealthComponent* UGainXHealthComponent::FindHealthComponent(const AActor* Actor)
 {
-    if (IsDead() || IsHealthFull()) return false;
-    SetHealth(Health + HealthAmount);
-    return true;
+    if (!Actor) return nullptr;
+    return Actor->FindComponentByClass<UGainXHealthComponent>();
+}
+
+void UGainXHealthComponent::InitializeWithAbilitySystem(UGainXAbilitySystemComponent* InASC)
+{
+    AActor* Owner = GetOwner();
+    check(Owner);
+
+    // Case when Ability System Component is alredy initialized
+    if (AbilitySystemComponent)
+    {
+        UE_LOG(LogHealthComponent, Error, TEXT("GainXHealthComponent: Health component for owner [%s] has already been initialized with an ability system."), *GetNameSafe(Owner));
+        return;
+    }
+
+    // Update local duplicate Ability System Component
+    AbilitySystemComponent = InASC;
+    if (!AbilitySystemComponent)
+    {
+        UE_LOG(LogHealthComponent, Error, TEXT("GainXHealthComponent: Cannot initialize health component for owner [%s] with NULL ability system."), *GetNameSafe(Owner));
+        return;
+    }
+
+    // Update local duplicate HealthSet
+    HealthSet = AbilitySystemComponent->GetSet<UGainXHealthSet>();
+    if (!HealthSet)
+    {
+        UE_LOG(LogHealthComponent, Error, TEXT("GainXHealthComponent: Cannot initialize health component for owner [%s] with NULL health set on the ability system."), *GetNameSafe(Owner));
+        return;
+    }
+
+    // Register to listen for attribute changes
+    HealthSet->OnHealthChanged.AddUObject(this, &ThisClass::HandleHealthChanged);
+    HealthSet->OnMaxHealthChanged.AddUObject(this, &ThisClass::HandleMaxHealthChanged);
+    HealthSet->OnOutOfHealth.AddUObject(this, &ThisClass::HandleOutOfHealth);
+
+    // Reset attributes to default values
+    AbilitySystemComponent->SetNumericAttributeBase(UGainXHealthSet::GetHealthAttribute(), HealthSet->GetMaxHealth());
+}
+
+void UGainXHealthComponent::UninitializeFromAbilitySystem()
+{
+    // Unregister delegates
+    if (HealthSet)
+    {
+        HealthSet->OnHealthChanged.RemoveAll(this);
+        HealthSet->OnMaxHealthChanged.RemoveAll(this);
+        HealthSet->OnOutOfHealth.RemoveAll(this);
+    }
+
+    HealthSet = nullptr;
+    AbilitySystemComponent = nullptr;
+}
+
+float UGainXHealthComponent::GetHealth() const
+{
+    if (!HealthSet)
+    {
+        return 0.0f;
+    }
+
+    return HealthSet->GetHealth();
+}
+
+float UGainXHealthComponent::GetMaxHealth() const
+{
+    if (!HealthSet)
+    {
+        return 0.0f;
+    }
+
+    return HealthSet->GetMaxHealth();
+}
+
+float UGainXHealthComponent::GetHealthNormalized() const
+{
+    if (!HealthSet)
+    {
+        return 0.0f;
+    }
+
+    return UKismetMathLibrary::SafeDivide(HealthSet->GetHealth(), HealthSet->GetMaxHealth());
+}
+
+bool UGainXHealthComponent::IsDead() const
+{
+    if (!HealthSet)
+    {
+        return true;
+    }
+    return FMath::IsNearlyZero(HealthSet->GetHealth());
 }
 
 bool UGainXHealthComponent::IsHealthFull() const
 {
-    return FMath::IsNearlyEqual(Health, MaxHealth);
+    return FMath::IsNearlyEqual(HealthSet->GetHealth(), HealthSet->GetMaxHealth());
 }
 
-void UGainXHealthComponent::BeginPlay()
+void UGainXHealthComponent::HandleHealthChanged(AActor* DamageInstigator, AActor* DamageCauser, const FGameplayEffectSpec* DamageEffectSpec, float DamageMagnitude, float OldValue, float NewValue)
 {
-    Super::BeginPlay();
-
-    SetHealth(MaxHealth);
-
-    // Bind damage delegates
-    if (AActor* ComponentOwner = GetOwner())
-    {
-        ComponentOwner->OnTakeAnyDamage.AddDynamic(this, &UGainXHealthComponent::OnTakeAnyDamage);
-        ComponentOwner->OnTakePointDamage.AddDynamic(this, &UGainXHealthComponent::OnTakePointDamage);
-        ComponentOwner->OnTakeRadialDamage.AddDynamic(this, &UGainXHealthComponent::OnTakeRadialDamage);
-    }
+    OnHealthChanged.Broadcast(NewValue, NewValue - OldValue);
 }
 
-void UGainXHealthComponent::OnTakeAnyDamage(
-    AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser)
+void UGainXHealthComponent::HandleMaxHealthChanged(AActor* DamageInstigator, AActor* DamageCauser, const FGameplayEffectSpec* DamageEffectSpec, float DamageMagnitude, float OldValue, float NewValue)
 {
-    UE_LOG(LogHealthComponent, Display, TEXT("On any damage: %f"), Damage);
 }
 
-void UGainXHealthComponent::OnTakePointDamage(AActor* DamagedActor, float Damage, AController* InstigatedBy, FVector HitLocation,
-    UPrimitiveComponent* FHitComponent, FName BoneName, FVector ShotFromDirection, const UDamageType* DamageType, AActor* DamageCauser)
+void UGainXHealthComponent::HandleOutOfHealth(AActor* DamageInstigator, AActor* DamageCauser, const FGameplayEffectSpec* DamageEffectSpec, float DamageMagnitude, float OldValue, float NewValue)
 {
-    const float FinalDamage = Damage * GetPointDamageModifaer(DamagedActor, BoneName);
-    ApplyDamage(FinalDamage, InstigatedBy);
+    OnDeath.Broadcast();
 }
 
-void UGainXHealthComponent::OnTakeRadialDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, FVector Origin,
-    const FHitResult& HitInfo, AController* InstigatedBy, AActor* DamageCauser)
+void UGainXHealthComponent::OnUnregister()
 {
-    ApplyDamage(Damage, InstigatedBy);
-}
+    UninitializeFromAbilitySystem();
 
-void UGainXHealthComponent::HealUpdate()
-{
-    // Calculate the amount of health the character should gain
-    float HealthDelta = HealPerSecond * GetWorld()->GetTimerManager().GetTimerRate(HealTimerHandle);
-    SetHealth(Health + HealthDelta);
-
-    // Stop heal when health is full
-    if (IsHealthFull() && GetWorld())
-    {
-        GetWorld()->GetTimerManager().ClearTimer(HealTimerHandle);
-    }
-}
-
-void UGainXHealthComponent::SetHealth(float NewHealth)
-{
-    const float ClampedNewHealth = FMath::Clamp(NewHealth, 0.0f, MaxHealth);
-    const float HealthDelta = ClampedNewHealth - Health;
-    Health = ClampedNewHealth;
-    OnHealthChanged.Broadcast(Health, HealthDelta);
+    Super::OnUnregister();
 }
 
 void UGainXHealthComponent::Killed(AController* KillerController)
@@ -97,34 +160,6 @@ void UGainXHealthComponent::Killed(AController* KillerController)
     if (!Player) return;
 
     GameMode->Killed(KillerController, Player->Controller);
-}
-
-void UGainXHealthComponent::ApplyDamage(float Damage, AController* InstigatedBy)
-{
-    if (IsDead() || !GetWorld()) return;
-
-    SetHealth(Health - Damage);
-
-    // Clear heal timer if damaged when healing
-    GetWorld()->GetTimerManager().ClearTimer(HealTimerHandle);
-
-    // Character is dead
-    if (IsDead())
-    {
-        Killed(InstigatedBy);
-        OnDeath.Broadcast();
-    }
-
-    // Character is alive, start auto heal
-    else if (AutoHeal)
-    {
-        GetWorld()->GetTimerManager().SetTimer(
-            HealTimerHandle, this, &UGainXHealthComponent::HealUpdate, 1.0f / HealTimerUpdateRate, true, HealDelayTime);
-    }
-
-    PlayCameraShake();
-
-    ReportDamageEvent(Damage, InstigatedBy);
 }
 
 float UGainXHealthComponent::GetPointDamageModifaer(AActor* DamagedActor, const FName& BoneName)

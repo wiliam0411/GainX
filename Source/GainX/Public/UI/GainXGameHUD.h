@@ -14,9 +14,6 @@ class GAINX_API AGainXGameHUD : public AHUD
 {
     GENERATED_BODY()
 
-public:
-    virtual void DrawHUD() override;
-
 protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UI")
     TSubclassOf<UUserWidget> PlayerHUDWidgetClass;
@@ -36,6 +33,5 @@ private:
     UPROPERTY()
     UGainXBaseWidget* CurrentWidget = nullptr;
 
-    void DrawCrossHair();
     void OnMatchStateChanged(EGainXMatchState State);
 };

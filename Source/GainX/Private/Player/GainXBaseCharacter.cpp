@@ -12,6 +12,8 @@
 
 #include "Player/GainXPlayerState.h"
 #include "AbilitySystem/GainXAbilitySystemComponent.h"
+#include "AbilitySystem/GainXAbilitySet.h"
+#include "Equipment/GainXEquipmentManagerComponent.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogBaseCharacter, All, All);
 
@@ -19,21 +21,38 @@ AGainXBaseCharacter::AGainXBaseCharacter(const FObjectInitializer& ObjInit) : Su
 {
     PrimaryActorTick.bCanEverTick = true;
 
+    AbilitySystemComponent = CreateDefaultSubobject<UGainXAbilitySystemComponent>("AbilitySystemComponent");
+    AbilitySystemComponent->SetIsReplicated(true);
+    AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Full);
+
+    HealthSet = CreateDefaultSubobject<UGainXHealthSet>(TEXT("HealthSet"));
+
+    NetUpdateFrequency = 100.0f;
+
     HealthComponent = CreateDefaultSubobject<UGainXHealthComponent>("HealthComponent");
-    WeaponComponent = CreateDefaultSubobject<UGainXWeaponComponent>("WeaponComponent");
+    HealthComponent->OnDeath.AddUObject(this, &ThisClass::OnDeath);
+    HealthComponent->OnHealthChanged.AddUObject(this, &ThisClass::OnHealthChanged);
+    LandedDelegate.AddDynamic(this, &AGainXBaseCharacter::OnGroundLanded);
+
+    // WeaponComponent = CreateDefaultSubobject<UGainXWeaponComponent>("WeaponComponent");
+
+    // TODO: Should be impl by gamefeatures
+    EquipmentManagerComponent = CreateDefaultSubobject<UGainXEquipmentManagerComponent>("EquipmentManagerComponent");
 }
 
-AGainXPlayerState* AGainXBaseCharacter::GetGainXPlayerState()
+AGainXPlayerState* AGainXBaseCharacter::GetGainXPlayerState() const
 {
-    if (!Controller) return nullptr;
+    if (!Controller || !Controller->PlayerState)
+    {
+        return nullptr;
+    }
+
     return Cast<AGainXPlayerState>(Controller->PlayerState);
 }
 
 UGainXAbilitySystemComponent* AGainXBaseCharacter::GetGainXAbilitySystemComponent() const
 {
-    auto GainXPlayerState = Cast<AGainXPlayerState>(Controller->PlayerState);
-    if (!GainXPlayerState) return nullptr;
-    return GainXPlayerState->GetGainXAbilitySystemComponent();
+    return AbilitySystemComponent;
 }
 
 UAbilitySystemComponent* AGainXBaseCharacter::GetAbilitySystemComponent() const
@@ -41,60 +60,28 @@ UAbilitySystemComponent* AGainXBaseCharacter::GetAbilitySystemComponent() const
     return GetGainXAbilitySystemComponent();
 }
 
-void AGainXBaseCharacter::InitializeAbilitySystem(UGainXAbilitySystemComponent* InASC, AActor* InOwnerActor)
-{
-    check(InASC);
-    check(InOwnerActor);
-
-    // The ability system component hasn't changed.
-    if (AbilitySystemComponent == InASC) return;
-
-    // Clean up the old ability system component if it exists
-    UninitializeAbilitySystem();
-
-    AbilitySystemComponent = InASC;
-    AbilitySystemComponent->InitAbilityActorInfo(InOwnerActor, this);
-}
-
-void AGainXBaseCharacter::UninitializeAbilitySystem()
-{
-    if (!AbilitySystemComponent)
-    {
-        return;
-    }
-
-    if (AbilitySystemComponent->GetAvatarActor() == GetOwner())
-    {
-
-        AbilitySystemComponent->ClearAbilityInput();
-        AbilitySystemComponent->RemoveAllGameplayCues();
-
-        if (!AbilitySystemComponent->GetOwnerActor())
-        {
-            AbilitySystemComponent->SetAvatarActor(nullptr);
-        }
-        else
-        {
-            // If the ASC doesn't have a valid owner, we need to clear *all* actor info, not just the avatar pairing
-            AbilitySystemComponent->ClearActorInfo();
-        }
-    }
-
-    AbilitySystemComponent = nullptr;
-}
-
 void AGainXBaseCharacter::BeginPlay()
 {
     Super::BeginPlay();
 
+    check(AbilitySystemComponent);
+    check(AbilitySet);
+    check(HealthComponent);
+
+    AbilitySystemComponent->InitAbilityActorInfo(this, this);
+
+    AbilitySet->GiveToAbilitySystem(AbilitySystemComponent);
+
+    HealthComponent->InitializeWithAbilitySystem(AbilitySystemComponent);
     OnHealthChanged(HealthComponent->GetHealth(), 0.0f);
+}
 
-    // Death and HealthChanged delegates bind
-    HealthComponent->OnDeath.AddUObject(this, &AGainXBaseCharacter::OnDeath);
-    HealthComponent->OnHealthChanged.AddUObject(this, &AGainXBaseCharacter::OnHealthChanged);
+void AGainXBaseCharacter::Tick(float DeltaTime)
+{
+    Super::Tick(DeltaTime);
 
-    // Landing delegate bind
-    LandedDelegate.AddDynamic(this, &AGainXBaseCharacter::OnGroundLanded);
+    // Ќужно делать каждый тик чтобы обновл€ть прожатые абилки (лучше делать в контроллере)
+    AbilitySystemComponent->ProcessAbilityInput();
 }
 
 void AGainXBaseCharacter::OnDeath()
@@ -107,9 +94,6 @@ void AGainXBaseCharacter::OnDeath()
 
     // Set collision to ignore mode
     GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
-
-    WeaponComponent->StopFire();
-    WeaponComponent->Zoom(false);
 
     // Animation of death
     GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);

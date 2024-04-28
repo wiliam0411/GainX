@@ -17,4 +17,6 @@ namespace GainXGameplayTags
     GAINX_API   UE_DECLARE_GAMEPLAY_TAG_EXTERN(InputTag_Weapon_ADS);
 
 	GAINX_API	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_ADS);
+
+	GAINX_API UE_DECLARE_GAMEPLAY_TAG_EXTERN(GameplayCue_Weapon_Rifle_Fire);
 };

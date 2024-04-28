@@ -23,7 +23,11 @@ public class GainX : ModuleRules
             "GameplayAbilities",
         });
 
-        PrivateDependencyModuleNames.AddRange(new string[] { });
+        PrivateDependencyModuleNames.AddRange(new string[] 
+        { 
+            "Slate", 
+            "SlateCore" 
+        });
 
         PublicIncludePaths.AddRange(new string[]
         {
@@ -45,15 +49,11 @@ public class GainX : ModuleRules
             "GainX/Public/Sound",
             "GainX/Public/Input",
             "GainX/Public/System",
-            "GainX/Public/AbilitySystem"
+            "GainX/Public/Animation",
+            "GainX/Public/AbilitySystem",
+            "GainX/Public/AbilitySystem/Attributes",
+            "GainX/Public/Inventory",
+            "GainX/Public/Equipment"
         });
-
-        // Uncomment if you are using Slate UI
-        // PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
-
-        // Uncomment if you are using online features
-        // PrivateDependencyModuleNames.Add("OnlineSubsystem");
-
-        // To include OnlineSubsystemSteam, add it to the plugins section in your uproject file with the Enabled attribute set to true
     }
 }

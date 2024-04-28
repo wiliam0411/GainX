@@ -36,7 +36,8 @@ public:
 
     void Zoom(bool Enabled);
 
-    AGainXBaseWeapon* GetCurrentWeapon() { return CurrentWeapon; }
+    UFUNCTION(BlueprintCallable, Category = "GainX|WeaponComponent")
+    AGainXBaseWeapon* GetCurrentWeapon() const { return CurrentWeapon; }
 
 protected:
     UPROPERTY(EditDefaultsOnly, Category = "Weapon")

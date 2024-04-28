@@ -10,6 +10,8 @@
 class UGainXRespawnComponent;
 class AGainXPlayerState;
 class UGainXAbilitySystemComponent;
+class UGainXQuickBarComponent;
+class UGainXInventoryManagerComponent;
 
 UCLASS()
 class GAINX_API AGainXPlayerController : public APlayerController
@@ -22,10 +24,15 @@ public:
     UFUNCTION(BlueprintCallable, Category = "GainX|PlayerController")
     AGainXPlayerState* GetGainXPlayerState() const;
 
-    UFUNCTION(BlueprintCallable, Category = "GainX|PlayerController")
-    UGainXAbilitySystemComponent* GetGainXAbilitySystemComponent() const;
-
     virtual void PostProcessInput(const float DeltaTime, const bool bGamePaused) override;
+
+    // TODO: Should be impl by gamefeatures
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Componenets")
+    UGainXQuickBarComponent* QuickBarComponent;
+
+    // TODO: Should be impl by gamefeatures
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Componenets")
+    TObjectPtr<UGainXInventoryManagerComponent> InventoryManagerComponent;
 
 protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Componenets")

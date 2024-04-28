@@ -44,12 +44,6 @@ public:
     EGainXAbilityActivationPolicy GetActivationPolicy() const { return ActivationPolicy; }
 
 protected:
-    virtual void OnPawnAvatarSet();
-
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GainX|Ability")
     EGainXAbilityActivationPolicy ActivationPolicy;
-
-    /** Called when the ability system is initialized with a pawn avatar */
-    UFUNCTION(BlueprintImplementableEvent, Category = Ability, DisplayName = "OnPawnAvatarSet")
-    void K2_OnPawnAvatarSet();
 };

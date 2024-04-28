@@ -39,7 +39,6 @@ bool AGainXBaseWeapon::GetPlayerViewPoint(FVector& ViewLocation, FRotator& ViewR
     if (GainXCharacter->IsPlayerControlled())
     {
         const auto Controller = GainXCharacter->GetController<APlayerController>();
-        ;
         if (!Controller) return false;
 
         Controller->GetPlayerViewPoint(ViewLocation, ViewRotation);

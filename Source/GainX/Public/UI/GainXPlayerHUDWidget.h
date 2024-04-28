@@ -8,6 +8,7 @@
 #include "GainXPlayerHUDWidget.generated.h"
 
 class UProgressBar;
+class UGainXHealthComponent;
 
 UCLASS()
 class GAINX_API UGainXPlayerHUDWidget : public UGainXBaseWidget
@@ -58,7 +59,7 @@ protected:
     virtual void NativeOnInitialized() override;
 
 private:
-    void OnHealthChanged(float Health, float HealthDelta);
+    void OnHealthChanged(float NewValue, float Delta);
     void OnNewPawn(APawn* NewPawn);
     void UpdateHealthBar();
 };

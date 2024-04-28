@@ -7,7 +7,6 @@
 #include "AbilitySystemInterface.h"
 
 #include "Player/GainXPlayerState.h"
-#include "AbilitySystem/GainXAbilitySystemComponent.h"
 
 #include "GainXBaseCharacter.generated.h"
 
@@ -16,6 +15,8 @@ class UGainXWeaponComponent;
 class USoundCue;
 class UGainXAbilitySystemComponent;
 class AGainXPlayerState;
+class UGainXAbilitySet;
+class UGainXEquipmentManagerComponent;
 
 UCLASS()
 class GAINX_API AGainXBaseCharacter : public ACharacter, public IAbilitySystemInterface
@@ -25,25 +26,40 @@ class GAINX_API AGainXBaseCharacter : public ACharacter, public IAbilitySystemIn
 public:
     AGainXBaseCharacter(const FObjectInitializer& ObjInit);
 
-    UGainXHealthComponent* GetHealthComponent() { return HealthComponent; }
-    UGainXWeaponComponent* GetWeaponComponent() { return WeaponComponent; }
+    UFUNCTION(BlueprintCallable, Category = "GainX|Character")
+    UGainXHealthComponent* GetHealthComponent() const { return HealthComponent; }
 
-    AGainXPlayerState* GetGainXPlayerState();
+    UFUNCTION(BlueprintCallable, Category = "GainX|Character")
+    UGainXWeaponComponent* GetWeaponComponent() const { return WeaponComponent; }
+
+    UFUNCTION(BlueprintCallable, Category = "GainX|Character")
+    AGainXPlayerState* GetGainXPlayerState() const;
 
     UFUNCTION(BlueprintCallable, Category = "GainX|Character")
     UGainXAbilitySystemComponent* GetGainXAbilitySystemComponent() const;
     virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
-    /** Should be called by the owning pawn to become the avatar of the ability system */
-    void InitializeAbilitySystem(UGainXAbilitySystemComponent* InASC, AActor* InOwnerActor);
-
-    /** Should be called by the owning pawn to remove itself as the avatar of the ability system */
-    void UninitializeAbilitySystem();
-
 protected:
+    UPROPERTY(VisibleAnywhere, Category = "GainX|PlayerState")
+    TObjectPtr<UGainXAbilitySystemComponent> AbilitySystemComponent;
+
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Componenets")
     TObjectPtr<UGainXHealthComponent> HealthComponent;
 
+    // TODO: Should be impl by gamefeatures
+    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Componenets")
+    TObjectPtr<UGainXEquipmentManagerComponent> EquipmentManagerComponent;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Abilities")
+    TObjectPtr<UGainXAbilitySet> AbilitySet;
+
+    UPROPERTY()
+    TObjectPtr<const class UGainXHealthSet> HealthSet;
+
+    /** Delegate fired when our pawn becomes the ability system's avatar actor */
+    FSimpleMulticastDelegate OnAbilitySystemInitialized;
+
+    /* Deprecated */
     UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Componenets")
     TObjectPtr<UGainXWeaponComponent> WeaponComponent;
 
@@ -67,8 +83,8 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = "Material")
     FName MaterialColorParameterName = "Paint Color";
 
-    /** Setting health and binding delegates */
     virtual void BeginPlay() override;
+    virtual void Tick(float DeltaTime) override;
 
     /** Callback function of OnDeath */
     virtual void OnDeath();
@@ -87,8 +103,4 @@ private:
     /** Callback function of LandedDelegate */
     UFUNCTION()
     void OnGroundLanded(const FHitResult& Hit);
-
-    /** Pointer to the ability system component that is cached for convenience */
-    UPROPERTY()
-    TObjectPtr<UGainXAbilitySystemComponent> AbilitySystemComponent;
 };

@@ -44,7 +44,7 @@ void AGainXAICharacter::OnHealthChanged(float Health, float HealthDelta)
     Super::OnHealthChanged(Health, HealthDelta);
     const auto HealthBarWidget = Cast<UGainXHealthBarWidget>(HealthWidgetComponent->GetUserWidgetObject());
     if (!HealthBarWidget) return;
-    HealthBarWidget->SetHealthPercent(HealthComponent->GetHealthPercent());
+    HealthBarWidget->SetHealthPercent(HealthComponent->GetHealthNormalized());
 }
 
 void AGainXAICharacter::OnDeath()
