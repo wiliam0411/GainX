@@ -25,7 +25,7 @@ private:
 
 private:
     UPROPERTY()
-    TObjectPtr<UGainXInventoryItemInstance> Instance = nullptr;
+    TObjectPtr<UGainXInventoryItemDefinition> Item;
 
     UPROPERTY()
     int32 StackCount = 0;
@@ -41,23 +41,21 @@ struct FGainXInventoryList
 
 public:
     FGainXInventoryList() : OwnerComponent(nullptr) {}
+
     FGainXInventoryList(UActorComponent* InOwnerComponent) : OwnerComponent(InOwnerComponent) {}
 
-    /**/
-    UGainXInventoryItemInstance* AddEntry(TSubclassOf<UGainXInventoryItemDefinition> ItemDef, int32 StackCount);
-    
-    /**/
-    void RemoveEntry(UGainXInventoryItemInstance* Instance);
+    UGainXInventoryItemDefinition* AddEntry(TSubclassOf<UGainXInventoryItemDefinition> ItemDef, int32 StackCount);
 
-    /**/
-    TArray<UGainXInventoryItemInstance*> GetAllItems() const;
+    void RemoveEntry(UGainXInventoryItemDefinition* Instance);
+
+    TArray<UGainXInventoryItemDefinition*> GetAllItems() const;
 
 private:
     friend UGainXInventoryManagerComponent;
 
 private:
     UPROPERTY()
-    TArray<FGainXInventoryEntry> Entries;
+    TArray<FGainXInventoryEntry> InventoryEntries;
 
     UPROPERTY()
     TObjectPtr<UActorComponent> OwnerComponent;
@@ -75,13 +73,13 @@ public:
     UGainXInventoryManagerComponent(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
     UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = Inventory)
-    UGainXInventoryItemInstance* AddItemDefinition(TSubclassOf<UGainXInventoryItemDefinition> ItemDef, int32 StackCount = 1);
+    UGainXInventoryItemDefinition* AddInventoryItem(TSubclassOf<UGainXInventoryItemDefinition> ItemDef, int32 StackCount = 1);
 
     UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = Inventory)
-    void RemoveItemInstance(UGainXInventoryItemInstance* ItemInstance);
+    void RemoveInventoryItem(UGainXInventoryItemDefinition* ItemInstance);
 
-    UFUNCTION(BlueprintCallable, Category = Inventory, BlueprintPure = false)
-    TArray<UGainXInventoryItemInstance*> GetAllItems() const;
+    UFUNCTION(BlueprintCallable, Category = Inventory)
+    TArray<UGainXInventoryItemDefinition*> GetAllInventoryItems() const;
 
 private:
     UPROPERTY()

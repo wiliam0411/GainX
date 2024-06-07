@@ -9,6 +9,7 @@
 class AGainXPlayerCharacter;
 class AGainXPlayerController;
 class UGainXAbilitySystemComponent;
+class UGainXAbilityCost;
 
 UENUM(BlueprintType)
 enum class EGainXAbilityActivationPolicy : uint8
@@ -23,7 +24,7 @@ enum class EGainXAbilityActivationPolicy : uint8
     OnSpawn
 };
 
-UCLASS()
+UCLASS(Blueprintable, BlueprintType)
 class GAINX_API UGainXGameplayAbility : public UGameplayAbility
 {
     GENERATED_BODY()
@@ -44,6 +45,18 @@ public:
     EGainXAbilityActivationPolicy GetActivationPolicy() const { return ActivationPolicy; }
 
 protected:
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GainX|Ability")
+    //~UGameplayAbility interface
+    virtual bool CheckCost(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, OUT FGameplayTagContainer* OptionalRelevantTags = nullptr) const override;
+    
+    virtual void ApplyCost(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo) const override;
+    //~End of UGameplayAbility interface
+
+protected:
+    /** Defines how this ability is meant to activate */
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Activation)
     EGainXAbilityActivationPolicy ActivationPolicy;
+
+    /** Additional costs that must be paid to activate this ability */
+    UPROPERTY(EditDefaultsOnly, Instanced, Category = Costs)
+    TArray<TObjectPtr<UGainXAbilityCost>> AdditionalCosts;
 };

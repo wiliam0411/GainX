@@ -1,13 +1,12 @@
 // GainX, All Rights Reserved
 
-
 #include "Inventory/InventoryFragment_SetStats.h"
-#include "Inventory/GainXInventoryItemInstance.h"
+#include "Inventory/GainXInventoryItemDefinition.h"
 
-void UInventoryFragment_SetStats::OnInstanceCreated(UGainXInventoryItemInstance* Instance) const 
+void UInventoryFragment_SetStats::OnInstanceCreated(UGainXInventoryItemDefinition* InventoryItem) const 
 {
-    for (const auto KVP : InitialItemStats)
+    for (const FItemStats& ItemStats : InitialItemStats)
     {
-        // TODO: Implement
+        InventoryItem->AddItemStats(ItemStats.Tag, ItemStats.StackCount);
     }
 }

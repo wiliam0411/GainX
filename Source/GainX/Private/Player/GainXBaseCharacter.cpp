@@ -14,6 +14,7 @@
 #include "AbilitySystem/GainXAbilitySystemComponent.h"
 #include "AbilitySystem/GainXAbilitySet.h"
 #include "Equipment/GainXEquipmentManagerComponent.h"
+#include "Weapon/GainXWeaponInstance.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogBaseCharacter, All, All);
 
@@ -23,18 +24,14 @@ AGainXBaseCharacter::AGainXBaseCharacter(const FObjectInitializer& ObjInit) : Su
 
     AbilitySystemComponent = CreateDefaultSubobject<UGainXAbilitySystemComponent>("AbilitySystemComponent");
     AbilitySystemComponent->SetIsReplicated(true);
-    AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Full);
+    AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Mixed);
 
     HealthSet = CreateDefaultSubobject<UGainXHealthSet>(TEXT("HealthSet"));
 
     NetUpdateFrequency = 100.0f;
 
     HealthComponent = CreateDefaultSubobject<UGainXHealthComponent>("HealthComponent");
-    HealthComponent->OnDeath.AddUObject(this, &ThisClass::OnDeath);
-    HealthComponent->OnHealthChanged.AddUObject(this, &ThisClass::OnHealthChanged);
-    LandedDelegate.AddDynamic(this, &AGainXBaseCharacter::OnGroundLanded);
-
-    // WeaponComponent = CreateDefaultSubobject<UGainXWeaponComponent>("WeaponComponent");
+    HealthComponent->OnDeath.AddDynamic(this, &ThisClass::OnDeath);
 
     // TODO: Should be impl by gamefeatures
     EquipmentManagerComponent = CreateDefaultSubobject<UGainXEquipmentManagerComponent>("EquipmentManagerComponent");
@@ -70,21 +67,24 @@ void AGainXBaseCharacter::BeginPlay()
 
     AbilitySystemComponent->InitAbilityActorInfo(this, this);
 
-    AbilitySet->GiveToAbilitySystem(AbilitySystemComponent);
+    AbilitySet->GiveToAbilitySystem(AbilitySystemComponent, nullptr);
 
     HealthComponent->InitializeWithAbilitySystem(AbilitySystemComponent);
-    OnHealthChanged(HealthComponent->GetHealth(), 0.0f);
 }
 
 void AGainXBaseCharacter::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
 
-    // Ќужно делать каждый тик чтобы обновл€ть прожатые абилки (лучше делать в контроллере)
+    // Temp: Ќужно делать каждый тик чтобы обновл€ть прожатые абилки (лучше делать в контроллере)
     AbilitySystemComponent->ProcessAbilityInput();
+    if (auto CurrentWeapon = Cast<UGainXWeaponInstance>(EquipmentManagerComponent->GetFirstInstanceOfType(UGainXWeaponInstance::StaticClass())))
+    {
+        CurrentWeapon->UpdateWeaponInstance(DeltaTime);
+    }
 }
 
-void AGainXBaseCharacter::OnDeath()
+void AGainXBaseCharacter::OnDeath(AActor* OwningActor)
 {
     UE_LOG(LogBaseCharacter, Display, TEXT("Player %s is dead"), *GetName());
 
@@ -103,37 +103,10 @@ void AGainXBaseCharacter::OnDeath()
     UGameplayStatics::PlaySoundAtLocation(GetWorld(), DeathSound.Get(), GetActorLocation());
 }
 
-void AGainXBaseCharacter::TurnOff()
-{
-    WeaponComponent->StopFire();
-    WeaponComponent->Zoom(false);
-    Super::TurnOff();
-}
-
-void AGainXBaseCharacter::Reset()
-{
-    WeaponComponent->StopFire();
-    WeaponComponent->Zoom(false);
-    Super::Reset();
-}
-
 void AGainXBaseCharacter::SetPlayerColor(const FLinearColor& Color)
 {
     if (const auto MatInst = GetMesh()->CreateAndSetMaterialInstanceDynamic(0))
     {
         MatInst->SetVectorParameterValue(MaterialColorParameterName, Color);
-    }
-}
-
-void AGainXBaseCharacter::OnHealthChanged(float Health, float HealthDelta) {}
-
-void AGainXBaseCharacter::OnGroundLanded(const FHitResult& Hit)
-{
-    const float FallVelocity = -GetVelocity().Z;
-    if (FallVelocity > FallDamageVelocityThreshold)
-    {
-        const float FallDamage = FMath::Clamp(FallDamageMultiplier * (FallVelocity - FallDamageVelocityThreshold), 0.0f, HealthComponent->GetHealth());
-        UE_LOG(LogBaseCharacter, Display, TEXT("Fall damage: %f"), FallDamage);
-        TakeDamage(FallDamage, FPointDamageEvent{}, nullptr, nullptr);
     }
 }

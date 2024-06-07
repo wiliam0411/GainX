@@ -13,17 +13,5 @@ UGainXChangeWeaponService::UGainXChangeWeaponService()
 
 void UGainXChangeWeaponService::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds)
 {
-	const auto Controller = OwnerComp.GetAIOwner();
-	if (Controller)
-	{
-		const auto WeaponComponent = GainXUtils::GetGainXPlayerComponent<UGainXWeaponComponent>(Controller->GetPawn());
-		if (WeaponComponent)
-		{
-			if (FMath::FRand() < Probability)
-			{
-				WeaponComponent->NextWeapon();
-			}
-		}
-	}
 	Super::TickNode(OwnerComp, NodeMemory, DeltaSeconds);
 }

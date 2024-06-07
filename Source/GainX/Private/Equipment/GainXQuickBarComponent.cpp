@@ -1,26 +1,26 @@
 // GainX, All Rights Reserved
 
 #include "Equipment/GainXQuickBarComponent.h"
-#include "Equipment/GainXEquipmentInstance.h"
 #include "Equipment/GainXEquipmentManagerComponent.h"
 #include "Inventory/InventoryFragment_EquippableItem.h"
+#include "Equipment/GainXEquipmentObject.h"
 
 UGainXQuickBarComponent::UGainXQuickBarComponent(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer) {}
 
-void UGainXQuickBarComponent::AddItemToSlot(int32 SlotIndex, UGainXInventoryItemInstance* Item)
+void UGainXQuickBarComponent::AddItemToSlot(int32 SlotIndex, UGainXInventoryItemDefinition* InventoryItem)
 {
-    if (Slots.IsValidIndex(SlotIndex) && (Item != nullptr))
+    if (Slots.IsValidIndex(SlotIndex) && (InventoryItem != nullptr))
     {
         if (Slots[SlotIndex] == nullptr)
         {
-            Slots[SlotIndex] = Item;
+            Slots[SlotIndex] = InventoryItem;
         }
     }
 }
 
-UGainXInventoryItemInstance* UGainXQuickBarComponent::RemoveItemFromSlot(int32 SlotIndex)
+UGainXInventoryItemDefinition* UGainXQuickBarComponent::RemoveItemFromSlot(int32 SlotIndex)
 {
-    UGainXInventoryItemInstance* Result = nullptr;
+    UGainXInventoryItemDefinition* Result = nullptr;
 
     if (ActiveSlotIndex == SlotIndex)
     {
@@ -41,7 +41,7 @@ UGainXInventoryItemInstance* UGainXQuickBarComponent::RemoveItemFromSlot(int32 S
     return Result;
 }
 
-void UGainXQuickBarComponent::BeginPlay() 
+void UGainXQuickBarComponent::BeginPlay()
 {
     if (Slots.Num() < NumSlots)
     {
@@ -63,46 +63,63 @@ void UGainXQuickBarComponent::SetActiveSlotIndex(int32 NewIndex)
     }
 }
 
-UGainXEquipmentManagerComponent* UGainXQuickBarComponent::FindEquipmentManager() const
+UGainXEquipmentManagerComponent* UGainXQuickBarComponent::FindEquipmentManagerComponent() const
 {
-    if (AController* OwnerController = Cast<AController>(GetOwner()))
+    AController* OwnerController = Cast<AController>(GetOwner());
+    if (!OwnerController)
     {
-        if (APawn* Pawn = OwnerController->GetPawn())
-        {
-            return Pawn->FindComponentByClass<UGainXEquipmentManagerComponent>();
-        }
+        return nullptr;
     }
-    return nullptr;
+
+    APawn* OwnerPawn = OwnerController->GetPawn();
+    if (!OwnerPawn)
+    {
+        return nullptr;
+    }
+
+    return OwnerPawn->FindComponentByClass<UGainXEquipmentManagerComponent>();
 }
 
 void UGainXQuickBarComponent::EquipItemInSlot()
 {
+
     check(Slots.IsValidIndex(ActiveSlotIndex));
     check(EquippedItem == nullptr);
 
-    if (UGainXInventoryItemInstance* SlotItem = Slots[ActiveSlotIndex])
+    UGainXInventoryItemDefinition* SlotItem = Slots[ActiveSlotIndex];
+    if (!SlotItem)
     {
-        if (const UInventoryFragment_EquippableItem* EquipInfo = SlotItem->FindFragmentByClass<UInventoryFragment_EquippableItem>())
-        {
-            TSubclassOf<UGainXEquipmentDefinition> EquipDef = EquipInfo->EquipmentDefinition;
-            if (EquipDef != nullptr)
-            {
-                if (UGainXEquipmentManagerComponent* EquipmentManager = FindEquipmentManager())
-                {
-                    EquippedItem = EquipmentManager->EquipItem(EquipDef);
-                    if (EquippedItem != nullptr)
-                    {
-                        EquippedItem->SetInstigator(SlotItem);
-                    }
-                }
-            }
-        }
+        return;
+    }
+
+    const auto EquippableItemFragment = SlotItem->FindFragmentByClass<UInventoryFragment_EquippableItem>();
+    if (!EquippableItemFragment)
+    {
+        return;
+    }
+
+    TSubclassOf<UGainXEquipmentObject> EquipObj = EquippableItemFragment->EquipmentObject;
+    if (!EquipObj)
+    {
+        return;
+    }
+
+    UGainXEquipmentManagerComponent* EquipmentManager = FindEquipmentManagerComponent();
+    if (!EquipmentManager)
+    {
+        return;
+    }
+
+    EquippedItem = EquipmentManager->EquipItem(EquipObj);
+    if (EquippedItem)
+    {
+        EquippedItem->SetInstigator(SlotItem);
     }
 }
 
 void UGainXQuickBarComponent::UnequipItemInSlot()
 {
-    if (UGainXEquipmentManagerComponent* EquipmentManager = FindEquipmentManager())
+    if (UGainXEquipmentManagerComponent* EquipmentManager = FindEquipmentManagerComponent())
     {
         if (EquippedItem != nullptr)
         {

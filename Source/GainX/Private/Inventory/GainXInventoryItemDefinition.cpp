@@ -2,8 +2,6 @@
 
 #include "Inventory/GainXInventoryItemDefinition.h"
 
-#include UE_INLINE_GENERATED_CPP_BY_NAME(GainXInventoryItemDefinition)
-
 UGainXInventoryItemDefinition::UGainXInventoryItemDefinition(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer) {}
 
 const UGainXInventoryItemFragment* UGainXInventoryItemDefinition::FindFragmentByClass(TSubclassOf<UGainXInventoryItemFragment> FragmentClass) const
@@ -22,4 +20,24 @@ const UGainXInventoryItemFragment* UGainXInventoryItemDefinition::FindFragmentBy
     }
 
     return nullptr;
+}
+
+void UGainXInventoryItemDefinition::AddItemStats(FGameplayTag Tag, int32 StackCount) 
+{
+    ItemStats.AddStats(Tag, StackCount);
+}
+
+void UGainXInventoryItemDefinition::RemoveItemStats(FGameplayTag Tag, int32 StackCount) 
+{
+    ItemStats.RemoveStats(Tag, StackCount);
+}
+
+int32 UGainXInventoryItemDefinition::GetItemStatsCount(FGameplayTag Tag) const
+{
+    return ItemStats.GetStatsCount(Tag);
+}
+
+bool UGainXInventoryItemDefinition::HasItemStats(FGameplayTag Tag) const
+{
+    return ItemStats.ContainsTag(Tag);
 }

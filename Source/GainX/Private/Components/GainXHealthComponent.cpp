@@ -27,7 +27,11 @@ UGainXHealthComponent::UGainXHealthComponent(const FObjectInitializer& ObjectIni
 
 UGainXHealthComponent* UGainXHealthComponent::FindHealthComponent(const AActor* Actor)
 {
-    if (!Actor) return nullptr;
+    if (!Actor)
+    {
+        return nullptr;
+    }
+
     return Actor->FindComponentByClass<UGainXHealthComponent>();
 }
 
@@ -70,7 +74,6 @@ void UGainXHealthComponent::InitializeWithAbilitySystem(UGainXAbilitySystemCompo
 
 void UGainXHealthComponent::UninitializeFromAbilitySystem()
 {
-    // Unregister delegates
     if (HealthSet)
     {
         HealthSet->OnHealthChanged.RemoveAll(this);
@@ -128,16 +131,17 @@ bool UGainXHealthComponent::IsHealthFull() const
 
 void UGainXHealthComponent::HandleHealthChanged(AActor* DamageInstigator, AActor* DamageCauser, const FGameplayEffectSpec* DamageEffectSpec, float DamageMagnitude, float OldValue, float NewValue)
 {
-    OnHealthChanged.Broadcast(NewValue, NewValue - OldValue);
+    OnHealthChanged.Broadcast(this, OldValue, NewValue, DamageInstigator);
 }
 
 void UGainXHealthComponent::HandleMaxHealthChanged(AActor* DamageInstigator, AActor* DamageCauser, const FGameplayEffectSpec* DamageEffectSpec, float DamageMagnitude, float OldValue, float NewValue)
 {
+    OnMaxHealthChanged.Broadcast(this, OldValue, NewValue, DamageInstigator);
 }
 
 void UGainXHealthComponent::HandleOutOfHealth(AActor* DamageInstigator, AActor* DamageCauser, const FGameplayEffectSpec* DamageEffectSpec, float DamageMagnitude, float OldValue, float NewValue)
 {
-    OnDeath.Broadcast();
+    OnDeath.Broadcast(GetOwner());
 }
 
 void UGainXHealthComponent::OnUnregister()
@@ -145,56 +149,4 @@ void UGainXHealthComponent::OnUnregister()
     UninitializeFromAbilitySystem();
 
     Super::OnUnregister();
-}
-
-void UGainXHealthComponent::Killed(AController* KillerController)
-{
-    if (!GetWorld()) return;
-
-    const auto GameMode = Cast<AGainXGameModeBase>(GetWorld()->GetAuthGameMode());
-    check(GameMode);
-    if (!GameMode) return;
-
-    const auto Player = Cast<APawn>(GetOwner());
-    check(Player);
-    if (!Player) return;
-
-    GameMode->Killed(KillerController, Player->Controller);
-}
-
-float UGainXHealthComponent::GetPointDamageModifaer(AActor* DamagedActor, const FName& BoneName)
-{
-    const auto Character = Cast<ACharacter>(DamagedActor);
-    check(Character);
-    if (!Character || !Character->GetMesh() || !Character->GetMesh()->GetBodyInstance(BoneName)) return 1.0f;
-
-    const auto PhysMaterial = Character->GetMesh()->GetBodyInstance(BoneName)->GetSimplePhysicalMaterial();
-    if (!DamageModifaers.Contains(PhysMaterial)) return 1.0f;
-
-    return DamageModifaers[PhysMaterial];
-}
-
-void UGainXHealthComponent::PlayCameraShake()
-{
-    if (IsDead()) return;
-
-    const auto Player = Cast<APawn>(GetOwner());
-    if (!Player) return;
-
-    const auto Controller = Player->GetController<APlayerController>();
-    if (!Controller || !Controller->PlayerCameraManager) return;
-
-    Controller->PlayerCameraManager->StartCameraShake(CameraShake);
-}
-
-void UGainXHealthComponent::ReportDamageEvent(float Damage, AController* InstigatedBy)
-{
-    if (!GetWorld() || !InstigatedBy || !InstigatedBy->GetPawn() || !GetOwner()) return;
-    UAISense_Damage::ReportDamageEvent(               //
-        GetWorld(),                                   //
-        GetOwner(),                                   //
-        InstigatedBy->GetPawn(),                      //
-        Damage,                                       //
-        InstigatedBy->GetPawn()->GetActorLocation(),  //
-        GetOwner()->GetActorLocation());              //
 }

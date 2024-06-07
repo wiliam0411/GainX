@@ -2,108 +2,114 @@
 
 #include "Equipment/GainXEquipmentManagerComponent.h"
 #include "Equipment/GainXEquipmentDefinition.h"
-#include "Equipment/GainXEquipmentInstance.h"
 #include "AbilitySystem/GainXAbilitySystemComponent.h"
-#include "AbilitySystem/GainXAbilitySet.h"
 #include "AbilitySystemGlobals.h"
+#include "Equipment/GainXEquipmentObject.h"
+
+/**
+ * UGainXEquipmentManagerComponent
+ */
 
 UGainXEquipmentManagerComponent::UGainXEquipmentManagerComponent(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer), EquipmentList(this) {}
 
-UGainXEquipmentInstance* UGainXEquipmentManagerComponent::EquipItem(TSubclassOf<UGainXEquipmentDefinition> EquipmentDef)
+UGainXEquipmentObject* UGainXEquipmentManagerComponent::EquipItem(TSubclassOf<UGainXEquipmentObject> EquipmentObject)
 {
-    UGainXEquipmentInstance* Result = nullptr;
-    if (EquipmentDef != nullptr)
+    if (!EquipmentObject)
     {
-        Result = EquipmentList.AddEntry(EquipmentDef);
-        if (Result != nullptr)
-        {
-            Result->OnEquipped();
-        }
+        return nullptr;
     }
+
+    UGainXEquipmentObject* Result = EquipmentList.AddEntry(EquipmentObject);
+    if (Result)
+    {
+        Result->OnEquipped();
+    }
+
     return Result;
 }
 
-void UGainXEquipmentManagerComponent::UnequipItem(UGainXEquipmentInstance* ItemInstance)
+void UGainXEquipmentManagerComponent::UnequipItem(UGainXEquipmentObject* EquipmentObject)
 {
-    if (ItemInstance != nullptr)
+    if (!EquipmentObject)
     {
-        ItemInstance->OnUnequipped();
-        EquipmentList.RemoveEntry(ItemInstance);
+        return;
     }
+
+    EquipmentObject->OnUnequipped();
+    EquipmentList.RemoveEntry(EquipmentObject);
 }
 
-UGainXEquipmentInstance* UGainXEquipmentManagerComponent::GetFirstInstanceOfType(TSubclassOf<UGainXEquipmentInstance> InstanceType)
+UGainXEquipmentObject* UGainXEquipmentManagerComponent::GetFirstInstanceOfType(TSubclassOf<UGainXEquipmentObject> EquipmentObject)
 {
-    for (FGainXEquipmentEntry& Entry : EquipmentList.Entries)
+    for (FGainXEquipmentEntry& Equipment : EquipmentList.EquipmentEntries)
     {
-        if (UGainXEquipmentInstance* Instance = Entry.Instance)
+        UGainXEquipmentObject* Object = Equipment.EquipmentObject;
+        if (!Object)
         {
-            if (Instance->IsA(InstanceType))
-            {
-                return Instance;
-            }
+            continue;
+        }
+
+        if (Object->IsA(EquipmentObject))
+        {
+            return Object;
         }
     }
-
     return nullptr;
 }
 
-UGainXEquipmentInstance* FGainXEquipmentList::AddEntry(TSubclassOf<UGainXEquipmentDefinition> EquipmentDef)
-{
-    UGainXEquipmentInstance* Result = nullptr;
-
-    check(EquipmentDef != nullptr);
-    check(OwnerComponent);
-    check(OwnerComponent->GetOwner()->HasAuthority());
-
-    const UGainXEquipmentDefinition* EquipmentCDO = GetDefault<UGainXEquipmentDefinition>(EquipmentDef);
-
-    TSubclassOf<UGainXEquipmentInstance> InstanceType = EquipmentCDO->InstanceType;
-    if (InstanceType == nullptr)
-    {
-        InstanceType = UGainXEquipmentInstance::StaticClass();
-    }
-
-    FGainXEquipmentEntry& NewEntry = Entries.AddDefaulted_GetRef();
-    NewEntry.EquipmentDefinition = EquipmentDef;
-    NewEntry.Instance = NewObject<UGainXEquipmentInstance>(OwnerComponent->GetOwner(), InstanceType);
-    Result = NewEntry.Instance;
-
-    if (UGainXAbilitySystemComponent* ASC = GetAbilitySystemComponent())
-    {
-        for (TObjectPtr<const UGainXAbilitySet> AbilitySet : EquipmentCDO->AbilitySetsToGrant)
-        {
-            AbilitySet->GiveToAbilitySystem(ASC, Result);
-        }
-    }
-
-    Result->SpawnEquipmentActors(EquipmentCDO->ActorsToSpawn);
-
-    return Result;
-}
-
-void FGainXEquipmentList::RemoveEntry(UGainXEquipmentInstance* Instance)
-{
-    for (auto EntryIt = Entries.CreateIterator(); EntryIt; ++EntryIt)
-    {
-        FGainXEquipmentEntry& Entry = *EntryIt;
-        if (Entry.Instance == Instance)
-        {
-            if (UGainXAbilitySystemComponent* ASC = GetAbilitySystemComponent())
-            {
-                // TODO: Entry.GrantedHandles.TakeFromAbilitySystem(ASC);
-            }
-
-            Instance->DestroyEquipmentActors();
-
-            EntryIt.RemoveCurrent();
-        }
-    }
-}
+/**
+ * FGainXEquipmentList
+ */
 
 UGainXAbilitySystemComponent* FGainXEquipmentList::GetAbilitySystemComponent() const
 {
     check(OwnerComponent);
     AActor* OwningActor = OwnerComponent->GetOwner();
     return Cast<UGainXAbilitySystemComponent>(UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(OwningActor));
+}
+
+UGainXEquipmentObject* FGainXEquipmentList::AddEntry(TSubclassOf<UGainXEquipmentObject> EquipmentObject)
+{
+    check(EquipmentObject);
+    check(OwnerComponent);
+    check(OwnerComponent->GetOwner()->HasAuthority());
+
+    UGainXEquipmentObject* Result = nullptr;
+
+    const UGainXEquipmentObject* EquipmentObjectCDO = GetDefault<UGainXEquipmentObject>(EquipmentObject);
+
+    FGainXEquipmentEntry& NewEquipmentEntry = EquipmentEntries.AddDefaulted_GetRef();
+    NewEquipmentEntry.EquipmentObject = NewObject<UGainXEquipmentObject>(OwnerComponent->GetOwner(), EquipmentObject);
+    Result = NewEquipmentEntry.EquipmentObject;
+
+    if (UGainXAbilitySystemComponent* GainXASC = GetAbilitySystemComponent())
+    {
+        for (TObjectPtr<const UGainXAbilitySet> AbilitySet : EquipmentObjectCDO->AbilitySetsToGrant)
+        {
+            AbilitySet->GiveToAbilitySystem(GainXASC, &NewEquipmentEntry.GrantedHandles, Result);
+        }
+    }
+
+    Result->SpawnEquipmentActors();
+
+    return Result;
+}
+
+void FGainXEquipmentList::RemoveEntry(UGainXEquipmentObject* EquipmentObject)
+{
+    for (auto EntryIt = EquipmentEntries.CreateIterator(); EntryIt; ++EntryIt)
+    {
+        FGainXEquipmentEntry& Entry = *EntryIt;
+        if (Entry.EquipmentObject == EquipmentObject)
+        {
+            if (UGainXAbilitySystemComponent* GainXASC = GetAbilitySystemComponent())
+            {
+                Entry.GrantedHandles.TakeFromAbilitySystem(GainXASC);
+            }
+
+            EquipmentObject->DestroyEquipmentActors();
+
+            EntryIt.RemoveCurrent();
+        }
+    }
 }

@@ -13,6 +13,9 @@ struct FRangedWeaponFiringInput
 {
     GENERATED_BODY()
 
+public:
+    FRangedWeaponFiringInput() : StartTrace(ForceInitToZero), EndAim(ForceInitToZero), AimDir(ForceInitToZero) {}
+
     // Start of the trace
     FVector StartTrace;
 
@@ -23,12 +26,33 @@ struct FRangedWeaponFiringInput
     FVector AimDir;
 
     // The weapon instance / source of weapon data
-    UGainXWeaponInstance* WeaponData = nullptr;
+    TObjectPtr<UGainXWeaponInstance> WeaponData;
 
     // Can we play bullet FX for hits during this trace
     bool bCanPlayBulletFX = false;
+};
 
-    FRangedWeaponFiringInput() : StartTrace(ForceInitToZero), EndAim(ForceInitToZero), AimDir(ForceInitToZero) {}
+UCLASS(Blueprintable)
+class GAINX_API UGainXTracerData : public UObject
+{
+    GENERATED_BODY()
+
+public:
+    UGainXTracerData() {}
+
+    void SetHitPositions(TArray<FVector>& InHitPositions) { HitPositions = InHitPositions; }
+
+    UFUNCTION(BlueprintCallable)
+    TArray<FVector> GetHitPositions() const { return HitPositions; }
+
+    void SetHitNormals(TArray<FVector>& InHitNormals) { HitNormals = InHitNormals; }
+
+    UFUNCTION(BlueprintCallable)
+    TArray<FVector> GetHitNormals() const { return HitNormals; }
+
+private:
+    TArray<FVector> HitPositions;
+    TArray<FVector> HitNormals;
 };
 
 UCLASS()
@@ -51,6 +75,14 @@ protected:
 
     void PerformLocalTargeting(TArray<FHitResult>& OutHits);
 
+    void OnTargetDataReadyCallback(const FGameplayAbilityTargetDataHandle& InData);
+
     UFUNCTION(BlueprintCallable)
-    void StartRangedWeaponTargeting(TArray<FHitResult>& OutHits);
+    void StartRangedWeaponTargeting();
+
+    UFUNCTION(BlueprintImplementableEvent)
+    void OnRangedWeaponTargetDataReady(const FGameplayAbilityTargetDataHandle& TargetData);
+
+    UFUNCTION(BlueprintCallable)
+    FGameplayCueParameters MakeGameplayCueParametersFromTargetData(const FGameplayAbilityTargetDataHandle& InData);
 };

@@ -5,13 +5,13 @@
 
 UGainXWeaponInstance::UGainXWeaponInstance(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer) {}
 
-void UGainXWeaponInstance::UpdateWeaponInstance(float DeltaSeconds) 
+void UGainXWeaponInstance::UpdateWeaponInstance(float DeltaTime)
 {
     APawn* Pawn = GetPawn();
     check(Pawn != nullptr);
 
-    const bool bMinSpread = UpdateSpread(DeltaSeconds);
-    const bool bMinMultipliers = UpdateMultipliers(DeltaSeconds);
+    const bool bMinSpread = UpdateSpread(DeltaTime);
+    const bool bMinMultipliers = UpdateMultipliers(DeltaTime);
 
     bHasFirstShotAccuracy = bAllowFirstShotAccuracy && bMinMultipliers && bMinSpread;
 }
@@ -131,7 +131,8 @@ bool UGainXWeaponInstance::UpdateMultipliers(float DeltaSeconds)
     const bool bJumpFallMultiplerIs1 = FMath::IsNearlyEqual(JumpFallMultiplier, 1.0f, MultiplierNearlyEqualThreshold);
 
     // Determine if we are aiming down sights, and apply the bonus based on how far into the camera transition we are
-    float AimingAlpha = 0.0f;
+    float AimingAlpha = 1.0f;
+
     const float AimingMultiplier = FMath::GetMappedRangeValueClamped(
         /*InputRange=*/FVector2D(0.0f, 1.0f),
         /*OutputRange=*/FVector2D(1.0f, SpreadAngleMultiplier_Aiming),

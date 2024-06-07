@@ -6,10 +6,10 @@
 #include "AbilitySystem/GainXGameplayAbility.h"
 #include "GainXAbility_FromEquipment.generated.h"
 
-class UGainXEquipmentInstance;
-class UGainXInventoryItemInstance;
+class UGainXEquipmentObject;
+class UGainXInventoryItemDefinition;
 
-UCLASS()
+UCLASS(Blueprintable, BlueprintType)
 class GAINX_API UGainXAbility_FromEquipment : public UGainXGameplayAbility
 {
     GENERATED_BODY()
@@ -18,8 +18,8 @@ public:
     UGainXAbility_FromEquipment(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
     UFUNCTION(BlueprintCallable, Category = "GainX|Ability")
-    UGainXEquipmentInstance* GetAssociatedEquipment() const;
+    UGainXEquipmentObject* GetAssociatedEquipment() const;
 
     UFUNCTION(BlueprintCallable, Category = "GainX|Ability")
-    UGainXInventoryItemInstance* GetAssociatedItem() const;
+    UGainXInventoryItemDefinition* GetAssociatedItem() const;
 };

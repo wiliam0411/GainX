@@ -5,15 +5,15 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "Inventory/GainXInventoryItemDefinition.h"
-#include "Equipment/GainXEquipmentDefinition.h"
+#include "Equipment/GainXEquipmentObject.h"
 #include "InventoryFragment_EquippableItem.generated.h"
 
-UCLASS()
+UCLASS(Blueprintable)
 class GAINX_API UInventoryFragment_EquippableItem : public UGainXInventoryItemFragment
 {
     GENERATED_BODY()
 
 public:
-    UPROPERTY(EditAnywhere)
-    TSubclassOf<UGainXEquipmentDefinition> EquipmentDefinition;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    TSubclassOf<UGainXEquipmentObject> EquipmentObject;
 };

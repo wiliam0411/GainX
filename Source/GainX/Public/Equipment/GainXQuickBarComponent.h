@@ -7,10 +7,9 @@
 #include "GainXQuickBarComponent.generated.h"
 
 class UGainXEquipmentManagerComponent;
-class UGainXInventoryItemInstance;
-class UGainXEquipmentInstance;
-
-/**
+class UGainXInventoryItemDefinition;
+class UGainXEquipmentObject;
+    /**
  *
  */
 UCLASS(Blueprintable, meta = (BlueprintSpawnableComponent))
@@ -31,21 +30,21 @@ public:
 
     /**/
     UFUNCTION(BlueprintCallable, BlueprintPure = false, Category = "GainX|QuickBar")
-    TArray<UGainXInventoryItemInstance*> GetSlots() const { return Slots; }
+    TArray<UGainXInventoryItemDefinition*> GetSlots() const { return Slots; }
 
     /**/
     UFUNCTION(BlueprintCallable, Category = "GainX|QuickBar")
-    void AddItemToSlot(int32 SlotIndex, UGainXInventoryItemInstance* Item);
+    void AddItemToSlot(int32 SlotIndex, UGainXInventoryItemDefinition* InventoryItem);
 
     /**/
     UFUNCTION(BlueprintCallable, Category = "GainX|QuickBar")
-    UGainXInventoryItemInstance* RemoveItemFromSlot(int32 SlotIndex);
+    UGainXInventoryItemDefinition* RemoveItemFromSlot(int32 SlotIndex);
 
     virtual void BeginPlay() override;
 
 private:
     /**/
-    UGainXEquipmentManagerComponent* FindEquipmentManager() const;
+    UGainXEquipmentManagerComponent* FindEquipmentManagerComponent() const;
 
     /**/
     void EquipItemInSlot();
@@ -57,11 +56,11 @@ private:
     int32 NumSlots = 3;
 
     UPROPERTY()
-    TArray<TObjectPtr<UGainXInventoryItemInstance>> Slots;
+    TArray<TObjectPtr<UGainXInventoryItemDefinition>> Slots;
 
     UPROPERTY()
     int32 ActiveSlotIndex = -1;
 
     UPROPERTY()
-    TObjectPtr<UGainXEquipmentInstance> EquippedItem;
+    TObjectPtr<UGainXEquipmentObject> EquippedItem;
 };

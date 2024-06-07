@@ -17,6 +17,7 @@ namespace GainXGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(InputTag_Weapon_ADS, "InputTag.Weapon.ADS", "Weapon ads input.");
 
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_ADS, "Ability.ADS", "ability ADS.");
+    UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Weapon_Fire, "Ability.Weapon.Fire", "ability Weapon Fire.");
 
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(GameplayCue_Weapon_Rifle_Fire, "GameplayCue.Weapon.Rifle.Fire", "GameplayCue Weapon Rifle Fire");
 };

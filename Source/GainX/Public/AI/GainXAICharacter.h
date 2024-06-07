@@ -30,9 +30,7 @@ protected:
 
 	virtual void BeginPlay() override;
 
-	virtual void OnHealthChanged(float Health, float HealthDelta) override;
-
-	virtual void OnDeath() override;
+	virtual void OnDeath(AActor* OwningActor) override;
 
 	void UpdateHealthWidgetVisibility();
 };

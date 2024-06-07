@@ -13,5 +13,5 @@ class GAINX_API UGainXInventoryItemFragment : public UObject
     GENERATED_BODY()
 
 public:
-    virtual void OnInstanceCreated(UGainXInventoryItemInstance* Instance) const {}
+    virtual void OnInstanceCreated(UGainXInventoryItemDefinition* InventoryItem) const {}
 };

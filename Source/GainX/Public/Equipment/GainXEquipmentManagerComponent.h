@@ -4,11 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "Components/PawnComponent.h"
+#include "AbilitySystem/GainXAbilitySet.h"
 #include "GainXEquipmentManagerComponent.generated.h"
 
 class UGainXAbilitySystemComponent;
-class UGainXEquipmentDefinition;
-class UGainXEquipmentInstance;
+class UGainXEquipmentObject;
 
 /**
  * A single piece of applied equipment
@@ -26,10 +26,10 @@ private:
     friend UGainXEquipmentManagerComponent;
 
     UPROPERTY()
-    TSubclassOf<UGainXEquipmentDefinition> EquipmentDefinition;
+    TObjectPtr<UGainXEquipmentObject> EquipmentObject;
 
     UPROPERTY()
-    TObjectPtr<UGainXEquipmentInstance> Instance = nullptr;
+    FGainXAbilitySet_GrantedHandles GrantedHandles;
 };
 
 /**
@@ -45,22 +45,22 @@ public:
 
     FGainXEquipmentList(UActorComponent* InOwnerComponent) : OwnerComponent(InOwnerComponent) {}
 
-    UGainXEquipmentInstance* AddEntry(TSubclassOf<UGainXEquipmentDefinition> EquipmentDef);
+    UGainXEquipmentObject* AddEntry(TSubclassOf<UGainXEquipmentObject> EquipmentObject);
 
-    void RemoveEntry(UGainXEquipmentInstance* Instance);
+    void RemoveEntry(UGainXEquipmentObject* EquipmentObject);
 
 private:
-    UGainXAbilitySystemComponent* GetAbilitySystemComponent() const;
-
     friend UGainXAbilitySystemComponent;
     friend UGainXEquipmentManagerComponent;
 
 private:
     UPROPERTY()
-    TArray<FGainXEquipmentEntry> Entries;
+    TArray<FGainXEquipmentEntry> EquipmentEntries;
 
     UPROPERTY()
     TObjectPtr<UActorComponent> OwnerComponent;
+
+    UGainXAbilitySystemComponent* GetAbilitySystemComponent() const;
 };
 
 /**
@@ -74,17 +74,17 @@ class GAINX_API UGainXEquipmentManagerComponent : public UPawnComponent
 public:
     UGainXEquipmentManagerComponent(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
-    /**/
+    /* Adds EquipmentObject to EquipmentList */
     UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
-    UGainXEquipmentInstance* EquipItem(TSubclassOf<UGainXEquipmentDefinition> EquipmentDef);
+    UGainXEquipmentObject* EquipItem(TSubclassOf<UGainXEquipmentObject> EquipmentObject);
 
-    /**/
+    /* Removes EquipmentObject from EquipmentList */
     UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly)
-    void UnequipItem(UGainXEquipmentInstance* ItemInstance);
+    void UnequipItem(UGainXEquipmentObject* EquipmentObject);
 
-    /** Returns the first equipped instance of a given type, or nullptr if none are found */
+    /* Returns the first equipped instance of a given type, or nullptr if none are found */
     UFUNCTION(BlueprintCallable, BlueprintPure)
-    UGainXEquipmentInstance* GetFirstInstanceOfType(TSubclassOf<UGainXEquipmentInstance> InstanceType);
+    UGainXEquipmentObject* GetFirstInstanceOfType(TSubclassOf<UGainXEquipmentObject> InstanceType);
 
 private:
     UPROPERTY()

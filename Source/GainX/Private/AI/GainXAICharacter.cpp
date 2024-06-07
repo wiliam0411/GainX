@@ -39,17 +39,9 @@ void AGainXAICharacter::BeginPlay()
     check(HealthWidgetComponent);
 }
 
-void AGainXAICharacter::OnHealthChanged(float Health, float HealthDelta)
+void AGainXAICharacter::OnDeath(AActor* OwningActor)
 {
-    Super::OnHealthChanged(Health, HealthDelta);
-    const auto HealthBarWidget = Cast<UGainXHealthBarWidget>(HealthWidgetComponent->GetUserWidgetObject());
-    if (!HealthBarWidget) return;
-    HealthBarWidget->SetHealthPercent(HealthComponent->GetHealthNormalized());
-}
-
-void AGainXAICharacter::OnDeath()
-{
-    Super::OnDeath();
+    Super::OnDeath(OwningActor);
 
     const auto GainXController = Cast<AAIController>(Controller);
     if (GainXController && GainXController->BrainComponent)

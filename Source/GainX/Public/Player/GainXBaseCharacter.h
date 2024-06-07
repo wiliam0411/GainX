@@ -71,14 +71,6 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Damage")
     TObjectPtr<USoundCue> DeathSound;
 
-    /** Fall velociry at which character takes damage */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Damage")
-    float FallDamageVelocityThreshold = 900.0f;
-
-    /** Fall damage multiplier */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Damage")
-    float FallDamageMultiplier = 1.0f;
-
     /** Material instance parameter name for the color */
     UPROPERTY(EditDefaultsOnly, Category = "Material")
     FName MaterialColorParameterName = "Paint Color";
@@ -87,20 +79,10 @@ protected:
     virtual void Tick(float DeltaTime) override;
 
     /** Callback function of OnDeath */
-    virtual void OnDeath();
-
-    /** Callback function of OnHealthChanged */
-    virtual void OnHealthChanged(float Health, float HealthDelta);
+    UFUNCTION()
+    virtual void OnDeath(AActor* OwningActor);
 
 public:
-    virtual void TurnOff() override;
-    virtual void Reset() override;
-
     /** Creates and customize material instance of character mesh */
     void SetPlayerColor(const FLinearColor& Color);
-
-private:
-    /** Callback function of LandedDelegate */
-    UFUNCTION()
-    void OnGroundLanded(const FHitResult& Hit);
 };

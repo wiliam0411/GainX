@@ -113,7 +113,7 @@ void AGainXGameModeBase::StartRound()
 
 void AGainXGameModeBase::GameTimerUpdate()
 {
-    //UE_LOG(LogGainXGameModeBase, Display, TEXT("Time: %i / Round: %i/%i"), RoundCountdown, CurrentRound, GameData.RoundsNum);
+    // UE_LOG(LogGainXGameModeBase, Display, TEXT("Time: %i / Round: %i/%i"), RoundCountdown, CurrentRound, GameData.RoundsNum);
     if (--RoundCountdown == 0)
     {
         GetWorldTimerManager().ClearTimer(GameRoundTimerHandle);
@@ -240,14 +240,4 @@ void AGainXGameModeBase::SetMatchState(EGainXMatchState State)
     OnMatchStateChanged.Broadcast(MatchState);
 }
 
-void AGainXGameModeBase::StopAllFire()
-{
-    for (auto Pawn : TActorRange<APawn>(GetWorld()))
-    {
-        const auto WeaponComponent = GainXUtils::GetGainXPlayerComponent<UGainXWeaponComponent>(Pawn);
-        if (!WeaponComponent) continue;
-
-        WeaponComponent->StopFire();
-        WeaponComponent->Zoom(false);
-    }
-}
+void AGainXGameModeBase::StopAllFire() {}

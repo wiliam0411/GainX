@@ -54,9 +54,6 @@ void AGainXPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
 
     GainXInputComponent->BindActionByTag(InputConfig, GainXGameplayTags::InputTag_Move, ETriggerEvent::Triggered, this, &AGainXPlayerCharacter::Move);
     GainXInputComponent->BindActionByTag(InputConfig, GainXGameplayTags::InputTag_Look_Mouse, ETriggerEvent::Triggered, this, &AGainXPlayerCharacter::Look);
-
-    GainXInputComponent->BindActionByTag(InputConfig, GainXGameplayTags::InputTag_Weapon_Switch_Next, ETriggerEvent::Started, WeaponComponent.Get(), &UGainXWeaponComponent::NextWeapon);
-    GainXInputComponent->BindActionByTag(InputConfig, GainXGameplayTags::InputTag_Weapon_Reload, ETriggerEvent::Started, WeaponComponent.Get(), &UGainXWeaponComponent::Reload);
 }
 
 void AGainXPlayerCharacter::BeginPlay()
@@ -68,9 +65,9 @@ void AGainXPlayerCharacter::BeginPlay()
     CameraCollisionComponent->OnComponentEndOverlap.AddDynamic(this, &AGainXPlayerCharacter::OnCameraCollisionEndOverlap);
 }
 
-void AGainXPlayerCharacter::OnDeath()
+void AGainXPlayerCharacter::OnDeath(AActor* OwningActor)
 {
-    Super::OnDeath();
+    Super::OnDeath(OwningActor);
     if (Controller)
     {
         Controller->ChangeState(NAME_Spectating);

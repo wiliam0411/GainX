@@ -16,15 +16,7 @@ void UGainXFireService::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeM
 	const auto Controller = OwnerComp.GetAIOwner();
 	const auto Blackboard = OwnerComp.GetBlackboardComponent();
 
-	const auto HasAim = Blackboard && Blackboard->GetValueAsObject(EnemyActorKey.SelectedKeyName);
+	const bool HasAim = Blackboard && Blackboard->GetValueAsObject(EnemyActorKey.SelectedKeyName);
 
-	if (Controller)
-	{
-		const auto WeaponComponent = GainXUtils::GetGainXPlayerComponent<UGainXWeaponComponent>(Controller->GetPawn());
-		if (WeaponComponent)
-		{
-			HasAim ? WeaponComponent->StartFire() : WeaponComponent->StopFire();
-		}
-	}
 	Super::TickNode(OwnerComp, NodeMemory, DeltaSeconds);
 }

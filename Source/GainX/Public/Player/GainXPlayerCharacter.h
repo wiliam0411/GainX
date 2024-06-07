@@ -45,7 +45,7 @@ protected:
     virtual void BeginPlay() override;
 
     /** Switch player to observer after death */
-    virtual void OnDeath() override;
+    virtual void OnDeath(AActor* OwningActor) override;
 
     void Input_AbilityInputTagPressed(FGameplayTag InputTag);
     void Input_AbilityInputTagReleased(FGameplayTag InputTag);

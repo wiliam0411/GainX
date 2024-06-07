@@ -157,25 +157,68 @@ void UGainXAbility_RangedWeapon::PerformLocalTargeting(TArray<FHitResult>& OutHi
     }
 }
 
-void UGainXAbility_RangedWeapon::StartRangedWeaponTargeting(TArray<FHitResult>& OutHits)
+void UGainXAbility_RangedWeapon::OnTargetDataReadyCallback(const FGameplayAbilityTargetDataHandle& InData) 
 {
-    check(CurrentActorInfo);
 
-    AActor* AvatarActor = CurrentActorInfo->AvatarActor.Get();
-    check(AvatarActor);
+    // Take ownership of the target data to make sure no callbacks into game code invalidate it out from under us
+    FGameplayAbilityTargetDataHandle LocalTargetDataHandle(MoveTemp(const_cast<FGameplayAbilityTargetDataHandle&>(InData)));
 
-    UAbilitySystemComponent* MyAbilityComponent = CurrentActorInfo->AbilitySystemComponent.Get();
-    check(MyAbilityComponent);
+    // See if we still have ammo
+    if (CommitAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo))
+    {
+        // We fired the weapon, add spread
+        UGainXWeaponInstance* WeaponData = GetWeaponInstance();
+        check(WeaponData);
+        WeaponData->AddSpread();
 
-    AController* PC = CurrentActorInfo->PlayerController.Get();
-    check(PC);
+        // Let the blueprint do stuff like apply effects to the targets
+        OnRangedWeaponTargetDataReady(LocalTargetDataHandle);
+    }
+    else
+    {
+        K2_EndAbility();
+    }
+}
 
+void UGainXAbility_RangedWeapon::StartRangedWeaponTargeting()
+{
     TArray<FHitResult> FoundHits;
     PerformLocalTargeting(/*out*/ FoundHits);
 
-    UGainXWeaponInstance* WeaponData = GetWeaponInstance();
-    check(WeaponData);
-    WeaponData->AddSpread();
+    FGameplayAbilityTargetDataHandle TargetData;
+    TargetData.UniqueId = 0;
 
-    OutHits = FoundHits;
+    if (FoundHits.Num() > 0)
+    {
+        for (const FHitResult& FoundHit : FoundHits)
+        {
+            FGameplayAbilityTargetData_SingleTargetHit* NewTargetData = new FGameplayAbilityTargetData_SingleTargetHit();
+            NewTargetData->HitResult = FoundHit;
+            TargetData.Add(NewTargetData);
+        }
+    }
+
+    OnTargetDataReadyCallback(TargetData);
+}
+
+FGameplayCueParameters UGainXAbility_RangedWeapon::MakeGameplayCueParametersFromTargetData(const FGameplayAbilityTargetDataHandle& InData)
+{
+    TArray<FVector> HitPosArray;
+    TArray<FVector> HitNorArray;
+    for (int32 Index = 0; Index < InData.Num(); ++Index)
+    {
+        const auto CurrentTargetData = static_cast<const FGameplayAbilityTargetData_SingleTargetHit*>(InData.Get(Index));
+        const FVector HitPos = CurrentTargetData->GetHitResult()->ImpactPoint;
+        const FVector HitNor = CurrentTargetData->GetHitResult()->ImpactNormal;
+        HitPosArray.Add(HitPos);
+        HitNorArray.Add(HitNor);
+    }
+
+    UGainXTracerData* TracerData = NewObject<UGainXTracerData>();
+    TracerData->SetHitPositions(HitPosArray);
+
+    FGameplayCueParameters CueParameters;
+    CueParameters.SourceObject = TracerData;
+
+    return CueParameters;
 }

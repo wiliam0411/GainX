@@ -22,10 +22,6 @@ void UGainXPlayerHUDWidget::NativeOnInitialized()
 void UGainXPlayerHUDWidget::OnNewPawn(APawn* NewPawn)
 {
     const auto HealthComponent = GainXUtils::GetGainXPlayerComponent<UGainXHealthComponent>(NewPawn);
-    if (HealthComponent)
-    {
-        HealthComponent->OnHealthChanged.AddUObject(this, &ThisClass::OnHealthChanged);
-    }
     UpdateHealthBar();
 }
 
@@ -49,22 +45,6 @@ float UGainXPlayerHUDWidget::GetHealthPercent() const
     if (!HealthComponent) return 0.0f;
 
     return HealthComponent->GetHealthNormalized();
-}
-
-bool UGainXPlayerHUDWidget::GetWeaponUIData(FWeaponUIData& UIData) const
-{
-    const auto WeaponComponent = GainXUtils::GetGainXPlayerComponent<UGainXWeaponComponent>(GetOwningPlayerPawn());
-    if (!WeaponComponent) return false;
-
-    return WeaponComponent->GetWeaponUIData(UIData);
-}
-
-bool UGainXPlayerHUDWidget::GetWeaponAmmoData(FAmmoData& AmmoData) const
-{
-    const auto WeaponComponent = GainXUtils::GetGainXPlayerComponent<UGainXWeaponComponent>(GetOwningPlayerPawn());
-    if (!WeaponComponent) return false;
-
-    return WeaponComponent->GetWeaponAmmoData(AmmoData);
 }
 
 bool UGainXPlayerHUDWidget::IsPlayerAlive() const
