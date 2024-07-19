@@ -27,12 +27,7 @@ UGainXHealthComponent::UGainXHealthComponent(const FObjectInitializer& ObjectIni
 
 UGainXHealthComponent* UGainXHealthComponent::FindHealthComponent(const AActor* Actor)
 {
-    if (!Actor)
-    {
-        return nullptr;
-    }
-
-    return Actor->FindComponentByClass<UGainXHealthComponent>();
+    return Actor ? Actor->FindComponentByClass<UGainXHealthComponent>() : nullptr;
 }
 
 void UGainXHealthComponent::InitializeWithAbilitySystem(UGainXAbilitySystemComponent* InASC)
@@ -74,6 +69,7 @@ void UGainXHealthComponent::InitializeWithAbilitySystem(UGainXAbilitySystemCompo
 
 void UGainXHealthComponent::UninitializeFromAbilitySystem()
 {
+    // Clear all delegates
     if (HealthSet)
     {
         HealthSet->OnHealthChanged.RemoveAll(this);

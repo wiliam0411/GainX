@@ -3,38 +3,18 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Engine/GameInstance.h"
-#include "GainXCoreTypes.h"
+#include "CommonGameInstance.h"
 #include "GainXGameInstance.generated.h"
 
-class USoundClass;
-
-UCLASS()
-class GAINX_API UGainXGameInstance : public UGameInstance
+UCLASS(Config = Game)
+class GAINX_API UGainXGameInstance : public UCommonGameInstance
 {
     GENERATED_BODY()
 
 public:
-    FLevelData GetStartupLevel() const { return StartupLevel; }
-    void SetStartupLevelName(const FLevelData& Data) { StartupLevel = Data; }
-
-    TArray<FLevelData> GetLevelsData() const { return LevelsData; }
-
-
-    FName GetMenuLevelName() const { return MenuLevelName; }
-
-    void ToggleVolume();
+    UGainXGameInstance(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
 protected:
-    UPROPERTY(EditDefaultsOnly, Category = "Game")
-    TArray<FLevelData> LevelsData;
-
-    UPROPERTY(EditDefaultsOnly, Category = "Game")
-    FName MenuLevelName = NAME_None;
-
-    UPROPERTY(EditDefaultsOnly, Category = "Sound")
-    USoundClass* MasterSoundClass;
-
-private:
-    FLevelData StartupLevel;
+    virtual void Init() override;
+    virtual void Shutdown() override;
 };

@@ -3,34 +3,36 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Character.h"
+#include "ModularCharacter.h"
 #include "AbilitySystemInterface.h"
-
-#include "Player/GainXPlayerState.h"
-
+#include "GameFramework/Character.h"
 #include "GainXBaseCharacter.generated.h"
 
+class AGainXPlayerController;
 class UGainXHealthComponent;
-class UGainXWeaponComponent;
-class USoundCue;
-class UGainXAbilitySystemComponent;
+
 class AGainXPlayerState;
+class UGainXAbilitySystemComponent;
+class UGainXPawnData;
 class UGainXAbilitySet;
 class UGainXEquipmentManagerComponent;
+class UGainXExperience;
+class UCameraComponent;
+class UGainXCameraComponent;
 
-UCLASS()
-class GAINX_API AGainXBaseCharacter : public ACharacter, public IAbilitySystemInterface
+UCLASS(Config = Game)
+class GAINX_API AGainXBaseCharacter : public AModularCharacter, public IAbilitySystemInterface
 {
     GENERATED_BODY()
 
 public:
-    AGainXBaseCharacter(const FObjectInitializer& ObjInit);
+    AGainXBaseCharacter(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
     UFUNCTION(BlueprintCallable, Category = "GainX|Character")
-    UGainXHealthComponent* GetHealthComponent() const { return HealthComponent; }
+    UGainXCharacterMovementComponent* GetGainXMovementComponent() const;
 
     UFUNCTION(BlueprintCallable, Category = "GainX|Character")
-    UGainXWeaponComponent* GetWeaponComponent() const { return WeaponComponent; }
+    AGainXPlayerController* GetGainXPlayerController() const;
 
     UFUNCTION(BlueprintCallable, Category = "GainX|Character")
     AGainXPlayerState* GetGainXPlayerState() const;
@@ -39,50 +41,40 @@ public:
     UGainXAbilitySystemComponent* GetGainXAbilitySystemComponent() const;
     virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
-protected:
-    UPROPERTY(VisibleAnywhere, Category = "GainX|PlayerState")
-    TObjectPtr<UGainXAbilitySystemComponent> AbilitySystemComponent;
+    UFUNCTION(BlueprintCallable, Category = "GainX|Character")
+    UGainXHealthComponent* GetHealthComponent() const { return HealthComponent; }
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Componenets")
-    TObjectPtr<UGainXHealthComponent> HealthComponent;
-
-    // TODO: Should be impl by gamefeatures
-    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Componenets")
-    TObjectPtr<UGainXEquipmentManagerComponent> EquipmentManagerComponent;
-
-    UPROPERTY(EditDefaultsOnly, Category = "Abilities")
-    TObjectPtr<UGainXAbilitySet> AbilitySet;
-
-    UPROPERTY()
-    TObjectPtr<const class UGainXHealthSet> HealthSet;
-
-    /** Delegate fired when our pawn becomes the ability system's avatar actor */
-    FSimpleMulticastDelegate OnAbilitySystemInitialized;
-
-    /* Deprecated */
-    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Componenets")
-    TObjectPtr<UGainXWeaponComponent> WeaponComponent;
-
-    /** Time the body disappears after death */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Damage")
-    float LifeSpanOnDeath = 5.0f;
-
-    /** Death sound cue */
-    UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Damage")
-    TObjectPtr<USoundCue> DeathSound;
-
-    /** Material instance parameter name for the color */
-    UPROPERTY(EditDefaultsOnly, Category = "Material")
-    FName MaterialColorParameterName = "Paint Color";
-
-    virtual void BeginPlay() override;
+    //~AActor interface
+    virtual void PostInitializeComponents() override;
     virtual void Tick(float DeltaTime) override;
+    //~End of AActor interface
 
-    /** Callback function of OnDeath */
+    void SetPawnData(const UGainXPawnData* InPawnData);
+    const UGainXPawnData* GetPawnData() const { return PawnData; }
+
+protected:
+    /* Callback function of OnDeath */
     UFUNCTION()
     virtual void OnDeath(AActor* OwningActor);
 
-public:
-    /** Creates and customize material instance of character mesh */
-    void SetPlayerColor(const FLinearColor& Color);
+    void DisableMovementAndCollision();
+
+    void OnExperienceLoaded(const UGainXExperience* CurrentExperience);
+
+protected:
+    // TODO: Use camera modes instead
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GainX|Character", Meta = (AllowPrivateAccess = "true"))
+    TObjectPtr<UCameraComponent> CameraComponent;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GainX|Character", Meta = (AllowPrivateAccess = "true"))
+    TObjectPtr<UGainXAbilitySystemComponent> AbilitySystemComponent;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GainX|Character", Meta = (AllowPrivateAccess = "true"))
+    TObjectPtr<UGainXHealthComponent> HealthComponent;
+
+    UPROPERTY()
+    TObjectPtr<const UGainXPawnData> PawnData;
+
+    UPROPERTY()
+    TObjectPtr<const class UGainXHealthSet> HealthSet;
 };

@@ -1,9 +1,9 @@
 // GainX, All Rights Reserved
 
 #include "Inventory/InventoryFragment_SetStats.h"
-#include "Inventory/GainXInventoryItemDefinition.h"
+#include "Inventory/GainXInventoryItem.h"
 
-void UInventoryFragment_SetStats::OnInstanceCreated(UGainXInventoryItemDefinition* InventoryItem) const 
+void UInventoryFragment_SetStats::OnInstanceCreated(UGainXInventoryItem* InventoryItem) const 
 {
     for (const FItemStats& ItemStats : InitialItemStats)
     {

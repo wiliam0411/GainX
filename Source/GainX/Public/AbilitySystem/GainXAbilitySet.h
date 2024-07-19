@@ -115,15 +115,15 @@ public:
     void GiveToAbilitySystem(UGainXAbilitySystemComponent* GainXASC, FGainXAbilitySet_GrantedHandles* OutGrantedHandles, UObject* SourceObject = nullptr) const;
 
 protected:
-    // Gameplay abilities to grant when this ability set is granted.
+    /* Gameplay abilities to grant when this ability set is granted */
     UPROPERTY(EditDefaultsOnly, Category = "Gameplay Abilities", meta = (TitleProperty = Ability))
     TArray<FGainXAbilitySet_GameplayAbility> GrantedGameplayAbilities;
 
-    // Attribute sets to grant when this ability set is granted.
+    /* Attribute sets to grant when this ability set is granted */
     UPROPERTY(EditDefaultsOnly, Category = "Gameplay Attribute Sets", meta = (TitleProperty = AttributeSet))
     TArray<FGainXAbilitySet_AttributeSet> GrantedGameplayAttributeSets;
 
-    // Gameplay effects to grant when this ability set is granted.
+    /* Gameplay effects to grant when this ability set is granted */
     UPROPERTY(EditDefaultsOnly, Category = "Gameplay Effects", meta = (TitleProperty = GameplayEffect))
     TArray<FGainXAbilitySet_GameplayEffect> GrantedGameplayEffects;
 };

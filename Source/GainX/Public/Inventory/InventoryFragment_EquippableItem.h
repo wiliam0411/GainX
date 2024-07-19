@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
-#include "Inventory/GainXInventoryItemDefinition.h"
+#include "Inventory/GainXInventoryItem.h"
 #include "Equipment/GainXEquipmentObject.h"
 #include "InventoryFragment_EquippableItem.generated.h"
 

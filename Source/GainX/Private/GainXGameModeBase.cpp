@@ -3,241 +3,180 @@
 #include "GainXGameModeBase.h"
 #include "Player/GainXBaseCharacter.h"
 #include "Player/GainXPlayerController.h"
-#include "UI/GainXGameHUD.h"
-#include "AIController.h"
 #include "Player/GainXPlayerState.h"
-#include "GainXUtils.h"
-#include "Components/GainXRespawnComponent.h"
-#include "Components/GainXWeaponComponent.h"
+#include "Player/GainXPawnData.h"
+#include "UI/GainXHUD.h"
 #include "EngineUtils.h"
+#include "Kismet/GameplayStatics.h"
+#include "GameModes/GainXExperience.h"
+#include "GameModes/GainXGameState.h"
+#include "GameModes/GainXWorldSettings.h"
+#include "GameModes/GainXExperienceManagerComponent.h"
+#include "System/GainXAssetManager.h"
 
-DEFINE_LOG_CATEGORY_STATIC(LogGainXGameModeBase, All, All);
+DEFINE_LOG_CATEGORY_STATIC(LogGainXGameMode, All, All);
 
-constexpr static int32 MinRoundTimeForRespawn = 10;
-
-AGainXGameModeBase::AGainXGameModeBase()
+AGainXGameModeBase::AGainXGameModeBase(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
+    GameStateClass = AGainXGameState::StaticClass();
+    PlayerStateClass = AGainXPlayerState::StaticClass();
     DefaultPawnClass = AGainXBaseCharacter::StaticClass();
     PlayerControllerClass = AGainXPlayerController::StaticClass();
-    HUDClass = AGainXGameHUD::StaticClass();
-    PlayerStateClass = AGainXPlayerState::StaticClass();
+    HUDClass = AGainXHUD::StaticClass();
 }
 
-void AGainXGameModeBase::StartPlay()
+const UGainXPawnData* AGainXGameModeBase::GetPawnDataForController(const AController* InController) const
 {
-    Super::StartPlay();
+    // See if pawn data is already set on the player character
+    if (InController)
+    {
+        if (const auto GainXCharacter = Cast<AGainXBaseCharacter>(InController->GetCharacter()))
+        {
+            if (const UGainXPawnData* PawnData = GainXCharacter->GetPawnData())
+            {
+                return PawnData;
+            }
+        }
+    }
 
-    SpawnBots();
+    // If not, fall back to the the default for the current experience
+    check(GameState);
+    UGainXExperienceManagerComponent* ExperienceComponent = GameState->FindComponentByClass<UGainXExperienceManagerComponent>();
+    check(ExperienceComponent);
 
-    CreateTeamsInfo();
+    if (ExperienceComponent->IsExperienceLoaded())
+    {
+        const UGainXExperience* Experience = ExperienceComponent->GetCurrentExperienceChecked();
+        if (Experience->DefaultPawnData != nullptr)
+        {
+            return Experience->DefaultPawnData;
+        }
+    }
 
-    CurrentRound = 1;
+    // Experience not loaded yet, so there is no pawn data to be had
+    return nullptr;
+}
 
-    StartRound();
+void AGainXGameModeBase::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
+{
+    Super::InitGame(MapName, Options, ErrorMessage);
 
-    SetMatchState(EGainXMatchState::InProgress);
+    // Wait for the next frame to give time to initialize startup settings
+    GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ThisClass::HandleMatchAssignmentIfNotExpectingOne);
 }
 
 UClass* AGainXGameModeBase::GetDefaultPawnClassForController_Implementation(AController* InController)
 {
-    if (InController && InController->IsA<AAIController>())
+    if (const UGainXPawnData* PawnData = GetPawnDataForController(InController))
     {
-        return AIPawnClass;
+        if (PawnData->PawnClass)
+        {
+            return PawnData->PawnClass;
+        }
     }
+
     return Super::GetDefaultPawnClassForController_Implementation(InController);
 }
 
-void AGainXGameModeBase::Killed(AController* KillerController, AController* VictimController)
+APawn* AGainXGameModeBase::SpawnDefaultPawnAtTransform_Implementation(AController* NewPlayer, const FTransform& SpawnTransform)
 {
-    const auto KillerPlayerState = KillerController ? Cast<AGainXPlayerState>(KillerController->PlayerState) : nullptr;
+    FActorSpawnParameters SpawnInfo;
+    SpawnInfo.Instigator = GetInstigator();
+    SpawnInfo.ObjectFlags |= RF_Transient;  // Never save the default player pawns into a map.
+    SpawnInfo.bDeferConstruction = true;
 
-    const auto VictimPlayerState = VictimController ? Cast<AGainXPlayerState>(VictimController->PlayerState) : nullptr;
-
-    if (KillerPlayerState)
+    if (UClass* PawnClass = GetDefaultPawnClassForController(NewPlayer))
     {
-        KillerPlayerState->AddKill();
-    }
-
-    if (VictimPlayerState)
-    {
-        VictimPlayerState->AddDeaths();
-    }
-    StartRespawn(VictimController);
-}
-
-void AGainXGameModeBase::RespawnRequest(AController* Controller)
-{
-    ResetOnePlayer(Controller);
-}
-
-bool AGainXGameModeBase::SetPause(APlayerController* PC, FCanUnpause CanUnpauseDelegate)
-{
-    const auto PauseSet = Super::SetPause(PC, CanUnpauseDelegate);
-    if (PauseSet)
-    {
-        StopAllFire();
-        SetMatchState(EGainXMatchState::Pause);
-    }
-    return PauseSet;
-}
-
-bool AGainXGameModeBase::ClearPause()
-{
-    const auto PauseCleared = Super::ClearPause();
-    if (PauseCleared)
-    {
-        SetMatchState(EGainXMatchState::InProgress);
-    }
-    return PauseCleared;
-}
-
-void AGainXGameModeBase::SpawnBots()
-{
-    if (!GetWorld()) return;
-
-    for (int32 i = 0; i <= GameData.PlayersNum - 1; ++i)
-    {
-        FActorSpawnParameters SpawnInfo;
-        SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-        const auto GainXAIController = GetWorld()->SpawnActor<AAIController>(AIControllerClass, SpawnInfo);
-        RestartPlayer(GainXAIController);
-    }
-}
-
-void AGainXGameModeBase::StartRound()
-{
-    RoundCountdown = GameData.RoundTime;
-    GetWorldTimerManager().SetTimer(GameRoundTimerHandle, this, &AGainXGameModeBase::GameTimerUpdate, 1.0f, true);
-}
-
-void AGainXGameModeBase::GameTimerUpdate()
-{
-    // UE_LOG(LogGainXGameModeBase, Display, TEXT("Time: %i / Round: %i/%i"), RoundCountdown, CurrentRound, GameData.RoundsNum);
-    if (--RoundCountdown == 0)
-    {
-        GetWorldTimerManager().ClearTimer(GameRoundTimerHandle);
-        if (CurrentRound + 1 <= GameData.RoundsNum)
+        if (APawn* SpawnedPawn = GetWorld()->SpawnActor<APawn>(PawnClass, SpawnTransform, SpawnInfo))
         {
-            ++CurrentRound;
-            ResetPlayers();
-            StartRound();
+            SpawnedPawn->FinishSpawning(SpawnTransform);
+            return SpawnedPawn;
         }
         else
         {
-            GameOver();
+            UE_LOG(LogGainXGameMode, Error, TEXT("Game mode was unable to spawn Pawn of class [%s] at [%s]."), *GetNameSafe(PawnClass), *SpawnTransform.ToHumanReadableString());
         }
     }
+    else
+    {
+        UE_LOG(LogGainXGameMode, Error, TEXT("Game mode was unable to spawn Pawn due to NULL pawn class."));
+    }
+
+    return nullptr;
 }
 
-void AGainXGameModeBase::ResetPlayers()
+void AGainXGameModeBase::HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer)
 {
-    if (!GetWorld()) return;
-
-    for (auto It = GetWorld()->GetControllerIterator(); It; It++)
+    // Delay starting new players until the experience has been loaded
+    // (players who log in prior to that will be started by OnExperienceLoaded)
+    if (IsExperienceLoaded())
     {
-        ResetOnePlayer(It->Get());
+        Super::HandleStartingNewPlayer_Implementation(NewPlayer);
     }
 }
 
-void AGainXGameModeBase::ResetOnePlayer(AController* Controller)
+void AGainXGameModeBase::InitGameState()
 {
-    if (Controller && Controller->GetPawn())
+    Super::InitGameState();
+
+    // Listen for the experience load to complete
+    auto ExperienceComponent = GameState->FindComponentByClass<UGainXExperienceManagerComponent>();
+    check(ExperienceComponent);
+    ExperienceComponent->CallOrRegister_OnExperienceLoaded(FOnGainXExperienceLoaded::FDelegate::CreateUObject(this, &ThisClass::OnExperienceLoaded));
+}
+
+void AGainXGameModeBase::OnExperienceLoaded(const UGainXExperience* CurrentExperience)
+{
+    // Spawn any players that are already attached
+    //@TODO: Here we're handling only *player* controllers, but in GetDefaultPawnClassForController_Implementation we skipped all controllers
+    // GetDefaultPawnClassForController_Implementation might only be getting called for players anyways
+    for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
     {
-        Controller->GetPawn()->Reset();
-    }
-    RestartPlayer(Controller);
-    SetPlayerColor(Controller);
-}
-
-void AGainXGameModeBase::CreateTeamsInfo()
-{
-    if (!GetWorld()) return;
-
-    int32 TeamID = 1;
-    for (auto It = GetWorld()->GetControllerIterator(); It; It++)
-    {
-        const auto Controller = It->Get();
-        if (!Controller) continue;
-
-        const auto PlayerState = Cast<AGainXPlayerState>(Controller->PlayerState);
-        if (!PlayerState) continue;
-
-        PlayerState->SetTeamID(TeamID);
-        PlayerState->SetTeamColor(DetermineColorByTeamID(TeamID));
-        PlayerState->SetPlayerName(Controller->IsPlayerController() ? "Player" : "Bot");
-        SetPlayerColor(Controller);
-        TeamID = TeamID == 1 ? 2 : 1;
-    }
-}
-
-FLinearColor AGainXGameModeBase::DetermineColorByTeamID(int32 TeamID) const
-{
-    if (TeamID - 1 < GameData.TeamColors.Num())
-    {
-        return GameData.TeamColors[TeamID - 1];
-    }
-    return GameData.DefaultTeamColor;
-}
-
-void AGainXGameModeBase::SetPlayerColor(AController* Controller)
-{
-    if (!Controller) return;
-
-    const auto Character = Cast<AGainXBaseCharacter>(Controller->GetPawn());
-    if (!Character) return;
-
-    const auto PlayerState = Cast<AGainXPlayerState>(Controller->PlayerState);
-    if (!PlayerState) return;
-
-    Character->SetPlayerColor(PlayerState->GetTeamColor());
-}
-
-void AGainXGameModeBase::LogPlayerInfo()
-{
-    if (!GetWorld()) return;
-
-    for (auto It = GetWorld()->GetControllerIterator(); It; It++)
-    {
-        const auto Controller = It->Get();
-        if (!Controller) continue;
-
-        const auto PlayerState = Cast<AGainXPlayerState>(Controller->PlayerState);
-        if (!PlayerState) continue;
-    }
-}
-
-void AGainXGameModeBase::StartRespawn(AController* Controller)
-{
-    const auto RespawnAvailable = RoundCountdown > MinRoundTimeForRespawn + GameData.RespawnTime;
-    if (!RespawnAvailable) return;
-
-    const auto RespawnComponent = GainXUtils::GetGainXPlayerComponent<UGainXRespawnComponent>(Controller);
-    if (!RespawnComponent) return;
-
-    RespawnComponent->Respawn(GameData.RespawnTime);
-}
-
-void AGainXGameModeBase::GameOver()
-{
-    UE_LOG(LogGainXGameModeBase, Display, TEXT("======= GAME OVER ======="));
-    LogPlayerInfo();
-    for (auto Pawn : TActorRange<APawn>(GetWorld()))
-    {
-        if (Pawn)
+        APlayerController* PlayerController = Cast<APlayerController>(*Iterator);
+        if (PlayerController && !PlayerController->GetPawn())
         {
-            Pawn->TurnOff();
-            Pawn->DisableInput(nullptr);
+            if (PlayerCanRestart(PlayerController))
+            {
+                RestartPlayer(PlayerController);
+            }
         }
     }
-    SetMatchState(EGainXMatchState::GameOver);
 }
 
-void AGainXGameModeBase::SetMatchState(EGainXMatchState State)
+bool AGainXGameModeBase::IsExperienceLoaded() const
 {
-    if (MatchState == State) return;
-    MatchState = State;
-    OnMatchStateChanged.Broadcast(MatchState);
+    check(GameState);
+    auto ExperienceManagerComponent = GameState->FindComponentByClass<UGainXExperienceManagerComponent>();
+    check(ExperienceManagerComponent);
+    return ExperienceManagerComponent->IsExperienceLoaded();
 }
 
-void AGainXGameModeBase::StopAllFire() {}
+void AGainXGameModeBase::HandleMatchAssignmentIfNotExpectingOne()
+{
+    FPrimaryAssetId ExperienceId;
+    FString ExperienceIdSource;
+
+    if (AGainXWorldSettings* GainXWorldSettings = Cast<AGainXWorldSettings>(GetWorldSettings()))
+    {
+        ExperienceId = GainXWorldSettings->GetDefaultGameplayExperience();
+        ExperienceIdSource = TEXT("WorldSettings");
+    }
+
+    OnMatchAssignmentGiven(ExperienceId, ExperienceIdSource);
+}
+
+void AGainXGameModeBase::OnMatchAssignmentGiven(FPrimaryAssetId ExperienceId, const FString& ExperienceIdSource)
+{
+    if (ExperienceId.IsValid())
+    {
+        UE_LOG(LogGainXGameMode, Log, TEXT("Identified experience %s (Source: %s)"), *ExperienceId.ToString(), *ExperienceIdSource);
+
+        UGainXExperienceManagerComponent* ExperienceManagerComponent = GameState->FindComponentByClass<UGainXExperienceManagerComponent>();
+        check(ExperienceManagerComponent);
+        ExperienceManagerComponent->SetCurrentExperience(ExperienceId);
+    }
+    else
+    {
+        UE_LOG(LogGainXGameMode, Error, TEXT("Failed to identify experience, loading screen will stay up forever"));
+    }
+}

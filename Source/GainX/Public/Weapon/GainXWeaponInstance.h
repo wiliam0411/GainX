@@ -44,6 +44,9 @@ public:
     UFUNCTION(BlueprintCallable, Category = "GainX|WeaponInstance")
     float GetMaxDamageRange() const { return MaxDamageRange; }
 
+    UFUNCTION(BlueprintCallable, Category = "GainX|WeaponInstance")
+	bool HasFirstShotAccuracy() const { return bHasFirstShotAccuracy; }
+
 protected:
     // Spread exponent, affects how tightly shots will cluster around the center line
     // when the weapon has spread (non-perfect accuracy). Higher values will cause shots

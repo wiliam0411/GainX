@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Inventory/GainXInventoryItemFragment.h"
-#include "Blueprint/UserWidget.h"
+#include "UI/GainXReticleWidget.h"
 #include "InventoryFragment_ReticleConfig.generated.h"
 
 UCLASS()
@@ -14,5 +14,5 @@ class GAINX_API UInventoryFragment_ReticleConfig : public UGainXInventoryItemFra
 
 public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Reticle)
-    TArray<TSubclassOf<UUserWidget>> ReticleWidgets;
+    TArray<TSubclassOf<UGainXReticleWidget>> ReticleWidgets;
 };

@@ -4,23 +4,75 @@
 #include "Equipment/GainXEquipmentManagerComponent.h"
 #include "Inventory/InventoryFragment_EquippableItem.h"
 #include "Equipment/GainXEquipmentObject.h"
+#include "NativeGameplayTags.h"
+#include "GameFramework/GameplayMessageSubsystem.h"
+
+UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_GainX_QuickBar_Message_SlotsChanged, "GainX.QuickBar.Message.SlotsChanged");
+UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_GainX_QuickBar_Message_ActiveIndexChanged, "GainX.QuickBar.Message.ActiveIndexChanged");
 
 UGainXQuickBarComponent::UGainXQuickBarComponent(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer) {}
 
-void UGainXQuickBarComponent::AddItemToSlot(int32 SlotIndex, UGainXInventoryItemDefinition* InventoryItem)
+void UGainXQuickBarComponent::CycleActiveSlotForward()
 {
-    if (Slots.IsValidIndex(SlotIndex) && (InventoryItem != nullptr))
+    if (Slots.Num() < 2)
+    {
+        return;
+    }
+
+    const int32 OldIndex = (ActiveSlotIndex < 0 ? Slots.Num() - 1 : ActiveSlotIndex);
+    int32 NewIndex = ActiveSlotIndex;
+    do
+    {
+        NewIndex = (NewIndex + 1) % Slots.Num();
+        if (Slots[NewIndex] != nullptr)
+        {
+            SetActiveSlotIndex(NewIndex);
+            return;
+        }
+    } while (NewIndex != OldIndex);
+}
+
+void UGainXQuickBarComponent::CycleActiveSlotBackward()
+{
+    if (Slots.Num() < 2)
+    {
+        return;
+    }
+
+    const int32 OldIndex = (ActiveSlotIndex < 0 ? Slots.Num() - 1 : ActiveSlotIndex);
+    int32 NewIndex = ActiveSlotIndex;
+    do
+    {
+        NewIndex = (NewIndex - 1 + Slots.Num()) % Slots.Num();
+        if (Slots[NewIndex] != nullptr)
+        {
+            SetActiveSlotIndex(NewIndex);
+            return;
+        }
+    } while (NewIndex != OldIndex);
+}
+
+void UGainXQuickBarComponent::AddItemToSlot(int32 SlotIndex, UGainXInventoryItem* InventoryItem)
+{
+    if (Slots.IsValidIndex(SlotIndex) && InventoryItem)
     {
         if (Slots[SlotIndex] == nullptr)
         {
             Slots[SlotIndex] = InventoryItem;
+
+            FGainXQuickBarSlotsChangedMessage Message;
+            Message.Owner = GetOwner();
+            Message.Slots = Slots;
+
+            UGameplayMessageSubsystem& MessageSystem = UGameplayMessageSubsystem::Get(this);
+            MessageSystem.BroadcastMessage(TAG_GainX_QuickBar_Message_SlotsChanged, Message);
         }
     }
 }
 
-UGainXInventoryItemDefinition* UGainXQuickBarComponent::RemoveItemFromSlot(int32 SlotIndex)
+UGainXInventoryItem* UGainXQuickBarComponent::RemoveItemFromSlot(int32 SlotIndex)
 {
-    UGainXInventoryItemDefinition* Result = nullptr;
+    UGainXInventoryItem* Result = nullptr;
 
     if (ActiveSlotIndex == SlotIndex)
     {
@@ -35,6 +87,13 @@ UGainXInventoryItemDefinition* UGainXQuickBarComponent::RemoveItemFromSlot(int32
         if (Result != nullptr)
         {
             Slots[SlotIndex] = nullptr;
+
+            FGainXQuickBarSlotsChangedMessage Message;
+            Message.Owner = GetOwner();
+            Message.Slots = Slots;
+
+            UGameplayMessageSubsystem& MessageSystem = UGameplayMessageSubsystem::Get(this);
+            MessageSystem.BroadcastMessage(TAG_GainX_QuickBar_Message_SlotsChanged, Message);
         }
     }
 
@@ -60,6 +119,13 @@ void UGainXQuickBarComponent::SetActiveSlotIndex(int32 NewIndex)
         ActiveSlotIndex = NewIndex;
 
         EquipItemInSlot();
+
+        FGainXQuickBarActiveIndexChangedMessage Message;
+        Message.Owner = GetOwner();
+        Message.ActiveIndex = ActiveSlotIndex;
+
+        UGameplayMessageSubsystem& MessageSystem = UGameplayMessageSubsystem::Get(this);
+        MessageSystem.BroadcastMessage(TAG_GainX_QuickBar_Message_ActiveIndexChanged, Message);
     }
 }
 
@@ -82,11 +148,10 @@ UGainXEquipmentManagerComponent* UGainXQuickBarComponent::FindEquipmentManagerCo
 
 void UGainXQuickBarComponent::EquipItemInSlot()
 {
-
     check(Slots.IsValidIndex(ActiveSlotIndex));
     check(EquippedItem == nullptr);
 
-    UGainXInventoryItemDefinition* SlotItem = Slots[ActiveSlotIndex];
+    UGainXInventoryItem* SlotItem = Slots[ActiveSlotIndex];
     if (!SlotItem)
     {
         return;

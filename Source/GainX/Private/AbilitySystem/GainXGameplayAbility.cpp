@@ -26,11 +26,15 @@ UGainXAbilitySystemComponent* UGainXGameplayAbility::GetGainXAbilitySystemCompon
 
 AGainXPlayerController* UGainXGameplayAbility::GetGainXPlayerControllerFromActorInfo() const
 {
-    if (!CurrentActorInfo)
+    if (CurrentActorInfo)
     {
-        return nullptr;
+        if (const auto GainXCharacter = Cast<AGainXBaseCharacter>(CurrentActorInfo->OwnerActor.Get()))
+        {
+            return GainXCharacter->GetGainXPlayerController();
+        }
     }
-    return Cast<AGainXPlayerController>(CurrentActorInfo->PlayerController.Get());
+
+    return nullptr;
 }
 
 AGainXPlayerCharacter* UGainXGameplayAbility::GetGainXCharacterFromActorInfo() const
@@ -40,6 +44,31 @@ AGainXPlayerCharacter* UGainXGameplayAbility::GetGainXCharacterFromActorInfo() c
         return nullptr;
     }
     return Cast<AGainXPlayerCharacter>(CurrentActorInfo->AvatarActor.Get());
+}
+
+void UGainXGameplayAbility::TryActivateAbilityOnSpawn(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec) const
+{
+    // Try to activate if activation policy is on spawn.
+    if (ActorInfo && !Spec.IsActive() && (ActivationPolicy == EGainXAbilityActivationPolicy::OnSpawn))
+    {
+        UAbilitySystemComponent* ASC = ActorInfo->AbilitySystemComponent.Get();
+        const AActor* AvatarActor = ActorInfo->AvatarActor.Get();
+
+        // If avatar actor is torn off or about to die, don't try to activate until we get the new one.
+        if (ASC && AvatarActor && !AvatarActor->GetTearOff() && (AvatarActor->GetLifeSpan() <= 0.0f))
+        {
+            ASC->TryActivateAbility(Spec.Handle);
+        }
+    }
+}
+
+void UGainXGameplayAbility::OnGiveAbility(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec)
+{
+    Super::OnGiveAbility(ActorInfo, Spec);
+
+    K2_OnAbilityAdded();
+
+    TryActivateAbilityOnSpawn(ActorInfo, Spec);
 }
 
 bool UGainXGameplayAbility::CheckCost(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, OUT FGameplayTagContainer* OptionalRelevantTags) const

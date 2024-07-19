@@ -2,7 +2,7 @@
 
 #include "AbilitySystem/Abilities/GainXAbilityCost_ItemStats.h"
 #include "AbilitySystem/Abilities/GainXAbility_FromEquipment.h"
-#include "Inventory/GainXInventoryItemDefinition.h"
+#include "Inventory/GainXInventoryItem.h"
 
 UGainXAbilityCost_ItemStats::UGainXAbilityCost_ItemStats() {}
 
@@ -15,7 +15,7 @@ bool UGainXAbilityCost_ItemStats::CheckCost(
         return false;
     }
 
-    UGainXInventoryItemDefinition* InventoryItem = EquipmentAbility->GetAssociatedItem();
+    const UGainXInventoryItem* InventoryItem = EquipmentAbility->GetAssociatedItem();
     if (!InventoryItem)
     {
         return false;
@@ -40,7 +40,7 @@ void UGainXAbilityCost_ItemStats::ApplyCost(
         return;
     }
 
-    UGainXInventoryItemDefinition* InventoryItem = EquipmentAbility->GetAssociatedItem();
+    UGainXInventoryItem* InventoryItem = EquipmentAbility->GetAssociatedItem();
     if (!InventoryItem)
     {
         return;

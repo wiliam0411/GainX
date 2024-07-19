@@ -13,14 +13,6 @@ void UGainXGameOverWidget::NativeOnInitialized()
 {
     Super::NativeOnInitialized();
 
-    if (GetWorld())
-    {
-        if (const auto GameMode = Cast<AGainXGameModeBase>(GetWorld()->GetAuthGameMode()))
-        {
-            GameMode->OnMatchStateChanged.AddUObject(this, &UGainXGameOverWidget::OnMatchStateChanged);
-        }
-    }
-
     if (ResetLevelButton)
     {
         ResetLevelButton->OnClicked.AddDynamic(this, &UGainXGameOverWidget::OnResetLevel);
@@ -53,11 +45,7 @@ void UGainXGameOverWidget::UpdatePlayerStat()
         if (!PlayerStatRowWidget) continue;
 
         PlayerStatRowWidget->SetPlayerName(FText::FromString(PlayerState->GetPlayerName()));
-        PlayerStatRowWidget->SetKills(GainXUtils::TextFromInt(PlayerState->GetKillsNum()));
-        PlayerStatRowWidget->SetDeaths(GainXUtils::TextFromInt(PlayerState->GetDeathsNum()));
-        PlayerStatRowWidget->SetTeam(GainXUtils::TextFromInt(PlayerState->GetTeamID()));
         PlayerStatRowWidget->SetPlayerIndicatorVisibility(Controller->IsPlayerController());
-        PlayerStatRowWidget->SetTeamColor(PlayerState->GetTeamColor());
 
         PlayerStatBox->AddChild(PlayerStatRowWidget);
     }

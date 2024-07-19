@@ -8,7 +8,7 @@
 #include "Inventory/ItemStatsContainer.h"
 #include "InventoryFragment_SetStats.generated.h"
 
-class UGainXInventoryItemDefinition;
+class UGainXInventoryItem;
 
 UCLASS()
 class GAINX_API UInventoryFragment_SetStats : public UGainXInventoryItemFragment
@@ -16,7 +16,7 @@ class GAINX_API UInventoryFragment_SetStats : public UGainXInventoryItemFragment
     GENERATED_BODY()
 
 public:
-    virtual void OnInstanceCreated(UGainXInventoryItemDefinition* InventoryItem) const override;
+    virtual void OnInstanceCreated(UGainXInventoryItem* InventoryItem) const override;
 
 protected:
     UPROPERTY(EditDefaultsOnly)

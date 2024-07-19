@@ -22,7 +22,7 @@ public:
         const auto PlayerState1 = Cast<AGainXPlayerState>(Controller1->PlayerState);
         const auto PlayerState2 = Cast<AGainXPlayerState>(Controller2->PlayerState);
 
-        return PlayerState1 && PlayerState2 && PlayerState1->GetTeamID() != PlayerState2->GetTeamID();
+        return false;
     }
 
     static FText TextFromInt(int32 Number)

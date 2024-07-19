@@ -12,11 +12,13 @@ APawn* UGainXEquipmentObject::GetPawn() const
 
 void UGainXEquipmentObject::OnEquipped()
 {
+    PlayAnimMontage(EquipMontage);
     K2_OnEquipped();
 }
 
 void UGainXEquipmentObject::OnUnequipped()
 {
+    //PlayAnimMontage(UnequipMontage);
     K2_OnUnequipped();
 }
 
@@ -53,5 +55,13 @@ void UGainXEquipmentObject::DestroyEquipmentActors()
         {
             Actor->Destroy();
         }
+    }
+}
+
+void UGainXEquipmentObject::PlayAnimMontage(UAnimMontage* Montage) 
+{
+    if (ACharacter* Character = Cast<ACharacter>(GetPawn()))
+    {
+        Character->PlayAnimMontage(Montage);
     }
 }

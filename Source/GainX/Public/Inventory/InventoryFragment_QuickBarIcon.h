@@ -7,7 +7,7 @@
 #include "Styling/SlateBrush.h"
 #include "InventoryFragment_QuickBarIcon.generated.h"
 
-UCLASS()
+UCLASS(BlueprintType)
 class GAINX_API UInventoryFragment_QuickBarIcon : public UGainXInventoryItemFragment
 {
     GENERATED_BODY()

@@ -21,12 +21,23 @@ public class GainX : ModuleRules
             "GameplayTags",
             "GameplayTasks",
             "GameplayAbilities",
+            "GameFeatures",
+            "ModularGameplay",
+            "ModularGameplayActors"
         });
 
-        PrivateDependencyModuleNames.AddRange(new string[] 
-        { 
-            "Slate", 
-            "SlateCore" 
+        PrivateDependencyModuleNames.AddRange(new string[]
+        {
+            "Slate",
+            "SlateCore",
+            "CommonUI",
+            "CommonInput",
+            "GameSettings",
+            "CommonGame",
+            "CommonUser",
+            "GameSubtitles",
+            "GameplayMessageRuntime",
+            "UIExtension"
         });
 
         PublicIncludePaths.AddRange(new string[]
@@ -49,11 +60,11 @@ public class GainX : ModuleRules
             "GainX/Public/Sound",
             "GainX/Public/Input",
             "GainX/Public/System",
-            "GainX/Public/Animation",
             "GainX/Public/AbilitySystem",
             "GainX/Public/AbilitySystem/Attributes",
             "GainX/Public/Inventory",
-            "GainX/Public/Equipment"
+            "GainX/Public/Equipment",
+            "GainX/Public/GameModes"
         });
     }
 }

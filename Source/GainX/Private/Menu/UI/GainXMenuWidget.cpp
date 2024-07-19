@@ -33,11 +33,11 @@ void UGainXMenuWidget::InitLevelItems()
     const auto GainXGameInstance = GetGainXGameInstance();
     if (!GainXGameInstance) return;
 
-    checkf(GainXGameInstance->GetLevelsData().Num() != 0, TEXT("Levels data must not be empty"));
+    //checkf(GainXGameInstance->GetLevelsData().Num() != 0, TEXT("Levels data must not be empty"));
 
     if (!LevelItemsBox) return;
     LevelItemsBox->ClearChildren();
-
+    /*
     for (auto LevelData : GainXGameInstance->GetLevelsData())
     {
         const auto LevelItemWidget = CreateWidget<UGainXLevelItemWidget>(GetWorld(), LevelItemWidgetClass);
@@ -56,7 +56,7 @@ void UGainXMenuWidget::InitLevelItems()
     else
     {
         OnLevelSelected(GainXGameInstance->GetStartupLevel());
-    }
+    }*/
 }
 
 void UGainXMenuWidget::OnLevelSelected(const FLevelData& Data)
@@ -64,7 +64,7 @@ void UGainXMenuWidget::OnLevelSelected(const FLevelData& Data)
     const auto GainXGameInstance = GetGainXGameInstance();
     if (!GainXGameInstance) return;
 
-    GainXGameInstance->SetStartupLevelName(Data);
+    //GainXGameInstance->SetStartupLevelName(Data);
 
     for (auto LevelItemWidget : LevelItemWidgets)
     {
@@ -89,7 +89,7 @@ void UGainXMenuWidget::OnAnimationFinished_Implementation(const UWidgetAnimation
     const auto GainXGameInstance = GetGainXGameInstance();
     if (!GainXGameInstance) return;
 
-    UGameplayStatics::OpenLevel(this, GainXGameInstance->GetStartupLevel().LevelName);
+    //UGameplayStatics::OpenLevel(this, GainXGameInstance->GetStartupLevel().LevelName);
 }
 
 void UGainXMenuWidget::OnQuitGame()

@@ -6,8 +6,7 @@
 #include "Components/ActorComponent.h"
 #include "GainXInventoryManagerComponent.generated.h"
 
-class UGainXInventoryItemInstance;
-class UGainXInventoryItemDefinition;
+class UGainXInventoryItem;
 
 /**
  * A single entry in an inventory
@@ -25,7 +24,7 @@ private:
 
 private:
     UPROPERTY()
-    TObjectPtr<UGainXInventoryItemDefinition> Item;
+    TObjectPtr<UGainXInventoryItem> Item;
 
     UPROPERTY()
     int32 StackCount = 0;
@@ -44,11 +43,14 @@ public:
 
     FGainXInventoryList(UActorComponent* InOwnerComponent) : OwnerComponent(InOwnerComponent) {}
 
-    UGainXInventoryItemDefinition* AddEntry(TSubclassOf<UGainXInventoryItemDefinition> ItemDef, int32 StackCount);
+    /* Creates item instance and adds entry to InventoryEntries list */
+    UGainXInventoryItem* AddEntry(TSubclassOf<UGainXInventoryItem> InventoryItemClass, int32 StackCount);
 
-    void RemoveEntry(UGainXInventoryItemDefinition* Instance);
+    /* Searches for item instance in InventoryEntries list and removes it */
+    void RemoveEntry(UGainXInventoryItem* InventoryItem);
 
-    TArray<UGainXInventoryItemDefinition*> GetAllItems() const;
+    /* Gathers all item instances */
+    TArray<UGainXInventoryItem*> GetAllItems() const;
 
 private:
     friend UGainXInventoryManagerComponent;
@@ -73,13 +75,13 @@ public:
     UGainXInventoryManagerComponent(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
     UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = Inventory)
-    UGainXInventoryItemDefinition* AddInventoryItem(TSubclassOf<UGainXInventoryItemDefinition> ItemDef, int32 StackCount = 1);
+    UGainXInventoryItem* AddInventoryItem(TSubclassOf<UGainXInventoryItem> InventoryItemClass, int32 StackCount = 1);
 
     UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = Inventory)
-    void RemoveInventoryItem(UGainXInventoryItemDefinition* ItemInstance);
+    void RemoveInventoryItem(UGainXInventoryItem* ItemInstance);
 
     UFUNCTION(BlueprintCallable, Category = Inventory)
-    TArray<UGainXInventoryItemDefinition*> GetAllInventoryItems() const;
+    TArray<UGainXInventoryItem*> GetAllInventoryItems() const;
 
 private:
     UPROPERTY()

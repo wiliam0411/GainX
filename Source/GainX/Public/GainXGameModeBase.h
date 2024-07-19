@@ -3,69 +3,41 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/GameModeBase.h"
-#include "GainXCoreTypes.h"
+#include "ModularGameMode.h"
 #include "GainXGameModeBase.generated.h"
 
-class AAIController;
+class UGainXExperience;
+class UGainXPawnData;
 
-UCLASS()
-class GAINX_API AGainXGameModeBase : public AGameModeBase
+UCLASS(Config = Game)
+class GAINX_API AGainXGameModeBase : public AModularGameModeBase
 {
     GENERATED_BODY()
+
 public:
-    AGainXGameModeBase();
+    AGainXGameModeBase(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
-    FOnMatchStateChangedSignature OnMatchStateChanged;
+    UFUNCTION(BlueprintCallable, Category = "GainX|Pawn")
+    const UGainXPawnData* GetPawnDataForController(const AController* InController) const;
 
-    virtual void StartPlay() override;
-
+    //~AGameModeBase interface
+    virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;
     virtual UClass* GetDefaultPawnClassForController_Implementation(AController* InController) override;
-
-    void Killed(AController* KillerController, AController* VictimController);
-
-    FGameData GetGameData() const { return GameData; }
-    int32 GetCurrentRoundNum() const { return CurrentRound; }
-    int32 GetRoundSecondRemaining() const { return RoundCountdown; }
-
-    void RespawnRequest(AController* Controller);
-
-    virtual bool SetPause(APlayerController* PC, FCanUnpause CanUnpauseDelegate = FCanUnpause()) override;
-    virtual bool ClearPause() override;
-
-
-protected:
-    UPROPERTY(EditDefaultsOnly, Category = "Game")
-    TSubclassOf<AAIController> AIControllerClass;
-
-    UPROPERTY(EditDefaultsOnly, Category = "Game")
-    TSubclassOf<APawn> AIPawnClass;
-
-    UPROPERTY(EditDefaultsOnly, Category = "Game")
-    FGameData GameData;
+    virtual APawn* SpawnDefaultPawnAtTransform_Implementation(AController* NewPlayer, const FTransform& SpawnTransform) override;
+    virtual void HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer) override;
+    virtual void InitGameState() override;
+    //~End of AGameModeBase interface
 
 private:
-    EGainXMatchState MatchState = EGainXMatchState::WaitingToStart;
-    int32 CurrentRound = 1;
-    int32 RoundCountdown = 0;
-    FTimerHandle GameRoundTimerHandle;
+    /* Spawns players when experience is loaded */
+    void OnExperienceLoaded(const UGainXExperience* CurrentExperience);
 
-    void SpawnBots();
-    void StartRound();
-    void GameTimerUpdate();
+    /* Calls IsExperienceLoaded function of Experience Manager Component */
+    bool IsExperienceLoaded() const;
 
-    void ResetPlayers();
-    void ResetOnePlayer(AController* Controller);
+    /* Defines ExperienceId and ExperienceIdSource for OnMatchAssignmentGiven function */
+    void HandleMatchAssignmentIfNotExpectingOne();
 
-    void CreateTeamsInfo();
-    FLinearColor DetermineColorByTeamID(int32 TeamID) const;
-    void SetPlayerColor(AController* Controller);
-
-    void LogPlayerInfo();
-    void StartRespawn(AController* Controller);
-    void GameOver();
-
-    void SetMatchState(EGainXMatchState State);
-
-    void StopAllFire();
+    /* Sets Experience for ExperienceManagerComponent */
+    void OnMatchAssignmentGiven(FPrimaryAssetId ExperienceId, const FString& ExperienceIdSource);
 };

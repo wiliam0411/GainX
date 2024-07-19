@@ -16,20 +16,13 @@ struct FRangedWeaponFiringInput
 public:
     FRangedWeaponFiringInput() : StartTrace(ForceInitToZero), EndAim(ForceInitToZero), AimDir(ForceInitToZero) {}
 
-    // Start of the trace
     FVector StartTrace;
 
-    // End of the trace if aim were perfect
     FVector EndAim;
 
-    // The direction of the trace if aim were perfect
     FVector AimDir;
 
-    // The weapon instance / source of weapon data
-    TObjectPtr<UGainXWeaponInstance> WeaponData;
-
-    // Can we play bullet FX for hits during this trace
-    bool bCanPlayBulletFX = false;
+    TObjectPtr<UGainXWeaponInstance> EquipmentWeapon;
 };
 
 UCLASS(Blueprintable)
@@ -67,15 +60,17 @@ public:
     UGainXWeaponInstance* GetWeaponInstance() const;
 
 protected:
-    /** Does a single weapon trace, either sweeping or ray depending on if SweepRadius is above zero */
+    /* Does a single weapon trace, either sweeping or ray depending on if SweepRadius is above zero */
     FHitResult WeaponTrace(const FVector& StartTrace, const FVector& EndTrace, TArray<FHitResult>& OutHitResults) const;
 
-    /** Traces all of the bullets in a single cartridge */
+    /* Traces all of the bullets in a single cartridge */
     void TraceBulletsInCartridge(const FRangedWeaponFiringInput& InputData, TArray<FHitResult>& OutHits);
 
     void PerformLocalTargeting(TArray<FHitResult>& OutHits);
 
     void OnTargetDataReadyCallback(const FGameplayAbilityTargetDataHandle& InData);
+
+    FVector VRandConeNormalDistribution(const FVector& Dir, const float ConeHalfAngleRad, const float Exponent);
 
     UFUNCTION(BlueprintCallable)
     void StartRangedWeaponTargeting();

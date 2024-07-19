@@ -1,9 +1,18 @@
 // GainX, All Rights Reserved
 
 #include "GainXGameInstance.h"
-#include "Sound/GainXSoundFunctionLibrary.h"
+#include "Components/GameFrameworkComponentManager.h"
 
-void UGainXGameInstance::ToggleVolume()
+UGainXGameInstance::UGainXGameInstance(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer) {}
+
+void UGainXGameInstance::Init() 
 {
-	UGainXSoundFunctionLibrary::ToggleSoundClassVolume(MasterSoundClass);
+    Super::Init();
+
+	UGameFrameworkComponentManager* ComponentManager = GetSubsystem<UGameFrameworkComponentManager>(this);
+}
+
+void UGainXGameInstance::Shutdown() 
+{
+    Super::Shutdown();
 }

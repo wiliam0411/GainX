@@ -22,12 +22,4 @@ void UGainXGoToMenuWidget::OnGoToMenu()
 
     const auto GainXGameInstance = GetWorld()->GetGameInstance<UGainXGameInstance>();
     if (!GainXGameInstance) return;
-
-    if (GainXGameInstance->GetMenuLevelName().IsNone())
-    {
-        UE_LOG(LogGainXGoToMenuWidget, Error, TEXT("Level name is NONE"));
-        return;
-    }
-
-    UGameplayStatics::OpenLevel(this, GainXGameInstance->GetMenuLevelName());
 }

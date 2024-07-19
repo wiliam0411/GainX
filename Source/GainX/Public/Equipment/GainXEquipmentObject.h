@@ -66,12 +66,22 @@ public:
     UPROPERTY(EditDefaultsOnly, Category = "Equipment Object", meta = (DisplayPriority = 2))
     TArray<FGainXEquipmentActorSpawnConfig> ActorsToSpawn;
 
+    /* Anim montage to play when equip item */
+    UPROPERTY(EditDefaultsOnly, Category = "Equipment Object", meta = (DisplayPriority = 3))
+    TObjectPtr<UAnimMontage> EquipMontage;
+
+    /* Anim montage to play when unequip item */
+    UPROPERTY(EditDefaultsOnly, Category = "Equipment Object", meta = (DisplayPriority = 3))
+    TObjectPtr<UAnimMontage> UnequipMontage;
+
 protected:
     UFUNCTION(BlueprintImplementableEvent, Category = Equipment, meta = (DisplayName = "OnEquipped"))
     void K2_OnEquipped();
 
     UFUNCTION(BlueprintImplementableEvent, Category = Equipment, meta = (DisplayName = "OnUnequipped"))
     void K2_OnUnequipped();
+
+    void PlayAnimMontage(UAnimMontage* Montage);
 
 private:
     UPROPERTY()

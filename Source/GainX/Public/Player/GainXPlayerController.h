@@ -3,18 +3,18 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/PlayerController.h"
-#include "GainXCoreTypes.h"
+#include "CommonPlayerController.h"
 #include "GainXPlayerController.generated.h"
 
 class UGainXRespawnComponent;
-class AGainXPlayerState;
-class UGainXAbilitySystemComponent;
 class UGainXQuickBarComponent;
 class UGainXInventoryManagerComponent;
+class AGainXHUD;
+class AGainXPlayerState;
+class UGainXAbilitySystemComponent;
 
-UCLASS()
-class GAINX_API AGainXPlayerController : public APlayerController
+UCLASS(Config = Game)
+class GAINX_API AGainXPlayerController : public ACommonPlayerController
 {
     GENERATED_BODY()
 
@@ -24,26 +24,9 @@ public:
     UFUNCTION(BlueprintCallable, Category = "GainX|PlayerController")
     AGainXPlayerState* GetGainXPlayerState() const;
 
-    virtual void PostProcessInput(const float DeltaTime, const bool bGamePaused) override;
+    UFUNCTION(BlueprintCallable, Category = "GainX|PlayerController")
+    UGainXAbilitySystemComponent* GetGainXAbilitySystemComponent() const;
 
-    // TODO: Should be impl by gamefeatures
-    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Componenets")
-    UGainXQuickBarComponent* QuickBarComponent;
-
-    // TODO: Should be impl by gamefeatures
-    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Componenets")
-    TObjectPtr<UGainXInventoryManagerComponent> InventoryManagerComponent;
-
-protected:
-    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Componenets")
-    UGainXRespawnComponent* RespawnComponent;
-
-    virtual void BeginPlay() override;
-    virtual void OnPossess(APawn* InPawn) override;
-    virtual void SetupInputComponent() override;
-
-private:
-    void OnPauseGame();
-    void OnMatchStateChanged(EGainXMatchState State);
-    void OnMuteSound();
+    UFUNCTION(BlueprintCallable, Category = "GainX|PlayerController")
+    AGainXHUD* GetGainXHUD() const;
 };

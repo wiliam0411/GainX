@@ -32,8 +32,6 @@ void UGainXRespawnComponent::RespawnTimerUpdate()
 
 		const auto GameMode = Cast<AGainXGameModeBase>(GetWorld()->GetAuthGameMode());
 		if (!GameMode) return;
-
-		GameMode->RespawnRequest(Cast<AController>(GetOwner()));
 	}
 }
 

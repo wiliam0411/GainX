@@ -1,8 +1,7 @@
 // GainX, All Rights Reserved
 
 #include "Inventory/GainXInventoryManagerComponent.h"
-#include "Inventory/GainXInventoryItemDefinition.h"
-#include "Inventory/GainXInventoryItemInstance.h"
+#include "Inventory/GainXInventoryItem.h"
 #include "Inventory/GainXInventoryItemFragment.h"
 
 UGainXInventoryManagerComponent::UGainXInventoryManagerComponent(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer), InventoryList(this)
@@ -10,27 +9,27 @@ UGainXInventoryManagerComponent::UGainXInventoryManagerComponent(const FObjectIn
     PrimaryComponentTick.bCanEverTick = false;
 }
 
-UGainXInventoryItemDefinition* UGainXInventoryManagerComponent::AddInventoryItem(TSubclassOf<UGainXInventoryItemDefinition> ItemDef, int32 StackCount)
+UGainXInventoryItem* UGainXInventoryManagerComponent::AddInventoryItem(TSubclassOf<UGainXInventoryItem> InventoryItemClass, int32 StackCount)
 {
-    return InventoryList.AddEntry(ItemDef, StackCount);
+    return InventoryList.AddEntry(InventoryItemClass, StackCount);
 }
 
-void UGainXInventoryManagerComponent::RemoveInventoryItem(UGainXInventoryItemDefinition* ItemInstance) 
+void UGainXInventoryManagerComponent::RemoveInventoryItem(UGainXInventoryItem* ItemInstance)
 {
     InventoryList.RemoveEntry(ItemInstance);
 }
 
-TArray<UGainXInventoryItemDefinition*> UGainXInventoryManagerComponent::GetAllInventoryItems() const
+TArray<UGainXInventoryItem*> UGainXInventoryManagerComponent::GetAllInventoryItems() const
 {
     return InventoryList.GetAllItems();
 }
 
-UGainXInventoryItemDefinition* FGainXInventoryList::AddEntry(TSubclassOf<UGainXInventoryItemDefinition> ItemDef, int32 StackCount)
+UGainXInventoryItem* FGainXInventoryList::AddEntry(TSubclassOf<UGainXInventoryItem> InventoryItemClass, int32 StackCount)
 {
-    const auto InventoryItemCDO = GetDefault<UGainXInventoryItemDefinition>(ItemDef);
+    const auto InventoryItemCDO = GetDefault<UGainXInventoryItem>(InventoryItemClass);
 
     FGainXInventoryEntry& NewEntry = InventoryEntries.AddDefaulted_GetRef();
-    NewEntry.Item = NewObject<UGainXInventoryItemDefinition>(OwnerComponent->GetOwner(), ItemDef);
+    NewEntry.Item = NewObject<UGainXInventoryItem>(OwnerComponent->GetOwner(), InventoryItemClass);
     NewEntry.StackCount = StackCount;
 
     for (UGainXInventoryItemFragment* Fragment : InventoryItemCDO->Fragments)
@@ -44,21 +43,21 @@ UGainXInventoryItemDefinition* FGainXInventoryList::AddEntry(TSubclassOf<UGainXI
     return NewEntry.Item;
 }
 
-void FGainXInventoryList::RemoveEntry(UGainXInventoryItemDefinition* Instance)
+void FGainXInventoryList::RemoveEntry(UGainXInventoryItem* InventoryItem)
 {
     for (auto EntryIt = InventoryEntries.CreateIterator(); EntryIt; ++EntryIt)
     {
         FGainXInventoryEntry& Entry = *EntryIt;
-        if (Entry.Item == Instance)
+        if (Entry.Item == InventoryItem)
         {
             EntryIt.RemoveCurrent();
         }
     }
 }
 
-TArray<UGainXInventoryItemDefinition*> FGainXInventoryList::GetAllItems() const
+TArray<UGainXInventoryItem*> FGainXInventoryList::GetAllItems() const
 {
-    TArray<UGainXInventoryItemDefinition*> Results;
+    TArray<UGainXInventoryItem*> Results;
     Results.Reserve(InventoryEntries.Num());
     for (const FGainXInventoryEntry& Entry : InventoryEntries)
     {

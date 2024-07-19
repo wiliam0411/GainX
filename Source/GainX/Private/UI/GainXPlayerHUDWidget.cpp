@@ -75,7 +75,7 @@ int32 UGainXPlayerHUDWidget::GetKillsNum() const
     const auto PlayerState = Cast<AGainXPlayerState>(Controller->PlayerState);
     if (!PlayerState) return 0;
 
-    return PlayerState->GetKillsNum();
+    return 0;
 }
 
 FString UGainXPlayerHUDWidget::FormatBullets(int32 BulletsNum) const

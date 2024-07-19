@@ -7,7 +7,7 @@
 #include "GainXAbility_FromEquipment.generated.h"
 
 class UGainXEquipmentObject;
-class UGainXInventoryItemDefinition;
+class UGainXInventoryItem;
 
 UCLASS(Blueprintable, BlueprintType)
 class GAINX_API UGainXAbility_FromEquipment : public UGainXGameplayAbility
@@ -21,5 +21,5 @@ public:
     UGainXEquipmentObject* GetAssociatedEquipment() const;
 
     UFUNCTION(BlueprintCallable, Category = "GainX|Ability")
-    UGainXInventoryItemDefinition* GetAssociatedItem() const;
+    UGainXInventoryItem* GetAssociatedItem() const;
 };

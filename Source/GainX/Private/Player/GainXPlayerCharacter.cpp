@@ -1,6 +1,7 @@
 // GainX, All Rights Reserved
 
 #include "Player/GainXPlayerCharacter.h"
+#include "Player/GainXPlayerState.h"
 #include "Camera/CameraComponent.h"
 #include "Components/InputComponent.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -15,63 +16,47 @@
 #include "AbilitySystem/GainXAbilitySystemComponent.h"
 #include "GameplayTagContainer.h"
 #include "AbilitySystem/GainXAbilitySet.h"
+#include "Player/GainXPawnData.h"
+#include "Components/GameFrameworkComponentManager.h"
+#include "Camera/GainXCameraComponent.h"
+
+const FName AGainXPlayerCharacter::NAME_BindInputsNow("BindInputsNow");
 
 AGainXPlayerCharacter::AGainXPlayerCharacter(const FObjectInitializer& ObjInit) : Super(ObjInit)
 {
     PrimaryActorTick.bCanEverTick = true;
-
-    SpringArmComponent = CreateDefaultSubobject<USpringArmComponent>("SpringArmComponent");
-    SpringArmComponent->SetupAttachment(GetRootComponent());
-    SpringArmComponent->bUsePawnControlRotation = true;
-    SpringArmComponent->SocketOffset = FVector(0.0f, 100.0f, 80.0f);
-
-    CameraComponent = CreateDefaultSubobject<UCameraComponent>("CameraComponent");
-    CameraComponent->SetupAttachment(SpringArmComponent);
-
-    CameraCollisionComponent = CreateDefaultSubobject<USphereComponent>("CameraCollisionComponent");
-    CameraCollisionComponent->SetupAttachment(CameraComponent);
-    CameraCollisionComponent->SetSphereRadius(10.0f);
-    CameraCollisionComponent->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Overlap);
 }
 
 void AGainXPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
     Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-    auto PlayerController = Cast<APlayerController>(Controller);
-    if (!PlayerController) return;
+    const auto PlayerController = Cast<APlayerController>(Controller);
+    check(PlayerController);
 
-    auto Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer());
-    if (!Subsystem || !InputMapping) return;
+    const auto LocalPlayer = PlayerController->GetLocalPlayer();
+    check(LocalPlayer);
 
-    Subsystem->AddMappingContext(InputMapping, 0);
+    auto Subsystem = LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
+    check(Subsystem);
+
+    Subsystem->ClearAllMappings();
+
+    check(PawnData);
+    const auto InputConfig = PawnData->InputConfig;
+    check(InputConfig);
 
     auto GainXInputComponent = Cast<UGainXInputComponent>(PlayerInputComponent);
-    if (!GainXInputComponent) return;
+    check(GainXInputComponent);
 
     TArray<uint32> BindHandles;
     GainXInputComponent->BindAbilityActions(InputConfig, this, &ThisClass::Input_AbilityInputTagPressed, &ThisClass::Input_AbilityInputTagReleased, BindHandles);
 
+    // @TODO: review Native Actions
     GainXInputComponent->BindActionByTag(InputConfig, GainXGameplayTags::InputTag_Move, ETriggerEvent::Triggered, this, &AGainXPlayerCharacter::Move);
     GainXInputComponent->BindActionByTag(InputConfig, GainXGameplayTags::InputTag_Look_Mouse, ETriggerEvent::Triggered, this, &AGainXPlayerCharacter::Look);
-}
 
-void AGainXPlayerCharacter::BeginPlay()
-{
-    Super::BeginPlay();
-    
-    // Bind camera overlap delegates
-    CameraCollisionComponent->OnComponentBeginOverlap.AddDynamic(this, &AGainXPlayerCharacter::OnCameraCollisionBeginOverlap);
-    CameraCollisionComponent->OnComponentEndOverlap.AddDynamic(this, &AGainXPlayerCharacter::OnCameraCollisionEndOverlap);
-}
-
-void AGainXPlayerCharacter::OnDeath(AActor* OwningActor)
-{
-    Super::OnDeath(OwningActor);
-    if (Controller)
-    {
-        Controller->ChangeState(NAME_Spectating);
-    }
+    UGameFrameworkComponentManager::SendGameFrameworkComponentExtensionEvent(const_cast<APlayerController*>(PlayerController), NAME_BindInputsNow);
 }
 
 void AGainXPlayerCharacter::Move(const FInputActionValue& InputActionValue)
@@ -94,35 +79,27 @@ void AGainXPlayerCharacter::Look(const FInputActionValue& InputActionValue)
     }
 }
 
-void AGainXPlayerCharacter::OnCameraCollisionBeginOverlap(
-    UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+TSubclassOf<UGainXCameraMode> AGainXPlayerCharacter::DetermineCameraMode() const
 {
-    CheckCameraOverlap();
-}
-
-void AGainXPlayerCharacter::OnCameraCollisionEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
-{
-    CheckCameraOverlap();
-}
-
-void AGainXPlayerCharacter::CheckCameraOverlap()
-{
-    // Hide character mesh if it overlaps camera
-    const bool HideMesh = CameraCollisionComponent->IsOverlappingComponent(GetCapsuleComponent());
-    GetMesh()->SetOwnerNoSee(HideMesh);
-
-    // Get array of character mesh child components
-    TArray<USceneComponent*> MeshChildren;
-    GetMesh()->GetChildrenComponents(true, MeshChildren);
-
-    // Hide child components if it overlaps camera
-    for (auto MeshChild : MeshChildren)
+    if (PawnData)
     {
-        const auto MeshChildGeometry = Cast<UPrimitiveComponent>(MeshChild);
-        if (!MeshChildGeometry) continue;
-
-        MeshChildGeometry->SetOwnerNoSee(HideMesh);
+        return PawnData->DefaultCameraMode;
     }
+
+    return nullptr;
+}
+
+void AGainXPlayerCharacter::PostInitializeComponents()
+{
+    Super::PostInitializeComponents();
+
+    /* APawn* Pawn = Cast<APawn>(this);
+
+    // Hook up the delegate for all pawns, in case we spectate later
+    if (PawnData)
+    {
+        CameraComponent->DetermineCameraModeDelegate.BindUObject(this, &ThisClass::DetermineCameraMode);
+    } */
 }
 
 void AGainXPlayerCharacter::Input_AbilityInputTagPressed(FGameplayTag InputTag)

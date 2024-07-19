@@ -14,6 +14,7 @@ class UInputMappingContext;
 class UGainXAbilitySet;
 struct FInputActionValue;
 struct FGameplayTag;
+class UGainXCameraMode;
 
 UCLASS()
 class GAINX_API AGainXPlayerCharacter : public AGainXBaseCharacter
@@ -25,47 +26,19 @@ public:
 
     virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+    /* The name of the extension event sent via UGameFrameworkComponentManager when ability inputs are ready to bind */
+    static const FName NAME_BindInputsNow;
+
+    //~AActor interface
+    virtual void PostInitializeComponents() override;
+    //~End of AActor interface
+
 protected:
-    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Componenets")
-    TObjectPtr<USpringArmComponent> SpringArmComponent;
-
-    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Componenets")
-    TObjectPtr<UCameraComponent> CameraComponent;
-
-    UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Componenets")
-    TObjectPtr<USphereComponent> CameraCollisionComponent;
-
-    UPROPERTY(EditDefaultsOnly, Category = "Input")
-    TObjectPtr<UGainXInputConfig> InputConfig;
-
-    UPROPERTY(EditDefaultsOnly, Category = "Input")
-    TObjectPtr<UInputMappingContext> InputMapping;
-
-    /** Bind camera overlap delegates */
-    virtual void BeginPlay() override;
-
-    /** Switch player to observer after death */
-    virtual void OnDeath(AActor* OwningActor) override;
-
     void Input_AbilityInputTagPressed(FGameplayTag InputTag);
     void Input_AbilityInputTagReleased(FGameplayTag InputTag);
 
-private:
-    /** Enhanced input handler function */
     void Move(const FInputActionValue& InputActionValue);
-
-    /** Enhanced input handler function */
     void Look(const FInputActionValue& InputActionValue);
 
-    /** Callback function of OnComponentBeginOverlap delegate */
-    UFUNCTION()
-    void OnCameraCollisionBeginOverlap(
-        UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
-
-    /** Callback function of OnComponentEndOverlap delegate */
-    UFUNCTION()
-    void OnCameraCollisionEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
-
-    /** Hide charcter mesh and its child components if overlap camera */
-    void CheckCameraOverlap();
+    TSubclassOf<UGainXCameraMode> DetermineCameraMode() const;
 };

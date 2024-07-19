@@ -2,7 +2,7 @@
 
 #include "AbilitySystem/Abilities/GainXAbility_FromEquipment.h"
 #include "Equipment/GainXEquipmentObject.h"
-#include "Inventory/GainXInventoryItemDefinition.h"
+#include "Inventory/GainXInventoryItem.h"
 
 UGainXAbility_FromEquipment::UGainXAbility_FromEquipment(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer) {}
 
@@ -15,11 +15,11 @@ UGainXEquipmentObject* UGainXAbility_FromEquipment::GetAssociatedEquipment() con
     return nullptr;
 }
 
-UGainXInventoryItemDefinition* UGainXAbility_FromEquipment::GetAssociatedItem() const
+UGainXInventoryItem* UGainXAbility_FromEquipment::GetAssociatedItem() const
 {
     if (UGainXEquipmentObject* Equipment = GetAssociatedEquipment())
     {
-        return Cast<UGainXInventoryItemDefinition>(Equipment->GetInstigator());
+        return Cast<UGainXInventoryItem>(Equipment->GetInstigator());
     }
     return nullptr;
 }

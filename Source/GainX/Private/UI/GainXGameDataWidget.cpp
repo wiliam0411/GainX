@@ -6,20 +6,17 @@
 
 int32 UGainXGameDataWidget::GetCurrentRoundNum() const
 {
-    const auto GameMode = GetGainXGameModeBase();
-    return GameMode ? GameMode->GetCurrentRoundNum() : 0;
+    return 0;
 }
 
 int32 UGainXGameDataWidget::GetTotalRoundsNum() const
 {
-    const auto GameMode = GetGainXGameModeBase();
-    return GameMode ? GameMode->GetGameData().RoundsNum : 0;
+    return 0;
 }
 
 int32 UGainXGameDataWidget::GetRoundSecondRemaining() const
 {
-    const auto GameMode = GetGainXGameModeBase();
-    return GameMode ? GameMode->GetRoundSecondRemaining() : 0;
+    return 0;
 }
 
 AGainXGameModeBase* UGainXGameDataWidget::GetGainXGameModeBase() const

@@ -15,7 +15,11 @@
 				"EnhancedInput",
 				"GameplayAbilities",
 				"CoreUObject",
-				"ModularGameplay"
+				"ModularGameplay",
+				"GameFeatures",
+				"CommonUI",
+				"ModularGameplayActors",
+				"CommonGame"
 			]
 		}
 	],
@@ -57,6 +61,30 @@
 		},
 		{
 			"Name": "MotionTrajectory",
+			"Enabled": true
+		},
+		{
+			"Name": "CommonUI",
+			"Enabled": true
+		},
+		{
+			"Name": "UIExtension",
+			"Enabled": true
+		},
+		{
+			"Name": "PocketWorlds",
+			"Enabled": true
+		},
+		{
+			"Name": "GameSubtitles",
+			"Enabled": true
+		},
+		{
+			"Name": "AsyncMixin",
+			"Enabled": true
+		},
+		{
+			"Name": "ShooterCore",
 			"Enabled": true
 		}
 	]

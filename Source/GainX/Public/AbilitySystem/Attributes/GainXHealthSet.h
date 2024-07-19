@@ -20,13 +20,13 @@ public:
     ATTRIBUTE_ACCESSORS(UGainXHealthSet, Healing);
     ATTRIBUTE_ACCESSORS(UGainXHealthSet, Damage);
 
-    /** Delegate when health changes due to damage / healing, some information may be missing on the client */
+    /* Delegate when health changes due to damage / healing, some information may be missing on the client */
     mutable FGainXAttributeEvent OnHealthChanged;
 
-    /** Delegate when max health changes */
+    /* Delegate when max health changes */
     mutable FGainXAttributeEvent OnMaxHealthChanged;
 
-    /** Delegate to broadcast when the health attribute reaches zero */
+    /* Delegate to broadcast when the health attribute reaches zero */
     mutable FGainXAttributeEvent OnOutOfHealth;
 
 protected:
@@ -40,28 +40,28 @@ protected:
     void ClampAttribute(const FGameplayAttribute& Attribute, float& NewValue) const;
 
 private:
-    /** Current health attribute */
+    /* Current health attribute */
     UPROPERTY(BlueprintReadOnly, Category = "GainX|Health", Meta = (AllowPrivateAccess = true))
     FGameplayAttributeData Health;
 
-    /** Current max health attribute */
+    /* Current max health attribute */
     UPROPERTY(BlueprintReadOnly, Category = "GainX|Health", Meta = (AllowPrivateAccess = true))
     FGameplayAttributeData MaxHealth;
 
-    /** Incoming healing. This is mapped directly to +Health */
+    /* Incoming healing. This is mapped directly to +Health */
     UPROPERTY(BlueprintReadOnly, Category = "GainX|Health", Meta = (AllowPrivateAccess = true))
     FGameplayAttributeData Healing;
 
-    /** Incoming damage. This is mapped directly to -Health */
+    /* Incoming damage. This is mapped directly to -Health */
     UPROPERTY(BlueprintReadOnly, Category = "GainX|Health", Meta = (AllowPrivateAccess = true))
     FGameplayAttributeData Damage;
 
-    /** Store Health before any changes */
+    /* Store Health before any changes */
     float HealthBeforeAttributeChange;
 
-    /** Store MaxHealth before any changes */
+    /* Store MaxHealth before any changes */
     float MaxHealthBeforeAttributeChange;
 
-    /** Used to track when the health reaches 0 */
+    /* Used to track when the health reaches 0 */
     bool bOutOfHealth;
 };
