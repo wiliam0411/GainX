@@ -27,6 +27,8 @@ protected:
     void SetTargetCrouchOffset(FVector NewTargetOffset);
     void UpdateCrouchOffset(float DeltaTime);
 
+	virtual void DrawDebug(UCanvas* Canvas) const override;
+
 protected:
     /* Once that is resolved this will become the default and TargetOffsetCurve will be removed */
     UPROPERTY(EditDefaultsOnly, Category = "Third Person")

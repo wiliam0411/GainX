@@ -56,14 +56,13 @@ AGainXBaseCharacter::AGainXBaseCharacter(const FObjectInitializer& ObjectInitial
     GainXMovementComp->bCanWalkOffLedgesWhenCrouching = true;
     GainXMovementComp->SetCrouchedHalfHeight(65.0f);
 
-    HealthComponent = CreateDefaultSubobject<UGainXHealthComponent>("HealthComponent");
+    HealthComponent = CreateDefaultSubobject<UGainXHealthComponent>(TEXT("HealthComponent"));
     HealthComponent->OnDeath.AddDynamic(this, &ThisClass::OnDeath);
 
-    CameraComponent = CreateDefaultSubobject<UCameraComponent>("CameraComponent");
-    CameraComponent->SetupAttachment(GetRootComponent());
-    CameraComponent->SetRelativeLocation(FVector(-300.0f, 150.0f, 75.0f));
+    DefaultCamera = CreateDefaultSubobject<UGainXCameraComponent>(TEXT("DefaultCamera1"));
+    DefaultCamera->SetRelativeLocation(FVector(-300.0f, 0.0f, 75.0f));
 
-    AbilitySystemComponent = CreateDefaultSubobject<UGainXAbilitySystemComponent>("AbilitySystemComponent");
+    AbilitySystemComponent = CreateDefaultSubobject<UGainXAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
     AbilitySystemComponent->SetIsReplicated(true);
     AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Mixed);
 

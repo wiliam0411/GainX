@@ -81,25 +81,19 @@ void AGainXPlayerCharacter::Look(const FInputActionValue& InputActionValue)
 
 TSubclassOf<UGainXCameraMode> AGainXPlayerCharacter::DetermineCameraMode() const
 {
-    if (PawnData)
-    {
-        return PawnData->DefaultCameraMode;
-    }
-
-    return nullptr;
+    check(PawnData);
+    return PawnData->DefaultCameraMode;
 }
 
 void AGainXPlayerCharacter::PostInitializeComponents()
 {
     Super::PostInitializeComponents();
 
-    /* APawn* Pawn = Cast<APawn>(this);
-
     // Hook up the delegate for all pawns, in case we spectate later
     if (PawnData)
     {
-        CameraComponent->DetermineCameraModeDelegate.BindUObject(this, &ThisClass::DetermineCameraMode);
-    } */
+        DefaultCamera->DetermineCameraModeDelegate.BindUObject(this, &ThisClass::DetermineCameraMode);
+    }
 }
 
 void AGainXPlayerCharacter::Input_AbilityInputTagPressed(FGameplayTag InputTag)

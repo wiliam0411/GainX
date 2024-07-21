@@ -3,8 +3,9 @@
 #include "Camera/GainXCameraMode_ThirdPerson.h"
 #include "GameFramework/Character.h"
 #include "Curves/CurveVector.h"
+#include "Engine/Canvas.h"
 
-UGainXCameraMode_ThirdPerson::UGainXCameraMode_ThirdPerson() 
+UGainXCameraMode_ThirdPerson::UGainXCameraMode_ThirdPerson()
 {
     TargetOffsetCurve = nullptr;
 }
@@ -16,6 +17,8 @@ void UGainXCameraMode_ThirdPerson::UpdateView(float DeltaTime)
 
     FVector PivotLocation = GetPivotLocation() + CurrentCrouchOffset;
     FRotator PivotRotation = GetPivotRotation();
+
+    UE_LOG(LogTemp, Warning, TEXT("PivotLocation: %f"), PivotLocation);
 
     PivotRotation.Pitch = FMath::ClampAngle(PivotRotation.Pitch, ViewPitchMin, ViewPitchMax);
 
@@ -82,4 +85,10 @@ void UGainXCameraMode_ThirdPerson::UpdateCrouchOffset(float DeltaTime)
         CurrentCrouchOffset = TargetCrouchOffset;
         CrouchOffsetBlendPct = 1.0f;
     }
+}
+
+void UGainXCameraMode_ThirdPerson::DrawDebug(UCanvas* Canvas) const
+{
+
+    Super::DrawDebug(Canvas);
 }

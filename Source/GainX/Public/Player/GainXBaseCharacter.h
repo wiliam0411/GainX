@@ -64,7 +64,7 @@ protected:
 protected:
     // TODO: Use camera modes instead
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GainX|Character", Meta = (AllowPrivateAccess = "true"))
-    TObjectPtr<UCameraComponent> CameraComponent;
+    TObjectPtr<UGainXCameraComponent> DefaultCamera;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GainX|Character", Meta = (AllowPrivateAccess = "true"))
     TObjectPtr<UGainXAbilitySystemComponent> AbilitySystemComponent;
