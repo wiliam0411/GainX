@@ -2,9 +2,7 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
-#include "UObject/NoExportTypes.h"
 #include "ItemStatsContainer.generated.h"
 
 USTRUCT(BlueprintType)
@@ -32,16 +30,16 @@ struct FItemStatsContainer
 public:
     FItemStatsContainer() {}
 
-    /** Adds a specified number of stacks to the tag (does nothing if StackCount is below 1) */
+    /* Adds a specified number of stacks to the tag (does nothing if StackCount is below 1) */
     void AddStats(FGameplayTag Tag, int32 StackCount);
 
-    /** Removes a specified number of stacks from the tag (does nothing if StackCount is below 1) */
+    /* Removes a specified number of stacks from the tag (does nothing if StackCount is below 1) */
     void RemoveStats(FGameplayTag Tag, int32 StackCount);
 
-    /** Returns the stack count of the specified tag (or 0 if the tag is not present) */
+    /* Returns the stack count of the specified tag (or 0 if the tag is not present) */
     int32 GetStatsCount(FGameplayTag Tag) const;
 
-    /** Returns true if there is at least one stack of the specified tag */
+    /* Returns true if there is at least one stack of the specified tag */
     bool ContainsTag(FGameplayTag Tag) const;
 
 private:

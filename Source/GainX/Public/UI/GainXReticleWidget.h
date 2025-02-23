@@ -6,8 +6,7 @@
 #include "CommonUserWidget.h"
 #include "GainXReticleWidget.generated.h"
 
-class UGainXWeaponInstance;
-class UGainXInventoryItem;
+class AGainXWeaponActor;
 
 /**
  *
@@ -33,14 +32,14 @@ public:
     bool HasFirstShotAccuracy() const;
 
     UFUNCTION(BlueprintCallable)
-    void InitializeFromWeapon(UGainXWeaponInstance* InWeapon);
+    void InitializeFromWeapon(AGainXWeaponActor* InWeapon);
 
     UFUNCTION(BlueprintImplementableEvent)
     void OnWeaponInitialized();
 
 protected:
     UPROPERTY(BlueprintReadOnly)
-    TObjectPtr<UGainXWeaponInstance> WeaponInstance;
+    TObjectPtr<AGainXWeaponActor> WeaponInstance;
 
     UPROPERTY(BlueprintReadOnly)
     TObjectPtr<UGainXInventoryItem> InventoryItem;

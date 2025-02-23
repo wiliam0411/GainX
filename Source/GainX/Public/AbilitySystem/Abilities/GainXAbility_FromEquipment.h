@@ -6,7 +6,7 @@
 #include "AbilitySystem/GainXGameplayAbility.h"
 #include "GainXAbility_FromEquipment.generated.h"
 
-class UGainXEquipmentObject;
+class AGainXEquipmentActor;
 class UGainXInventoryItem;
 
 UCLASS(Blueprintable, BlueprintType)
@@ -17,9 +17,9 @@ class GAINX_API UGainXAbility_FromEquipment : public UGainXGameplayAbility
 public:
     UGainXAbility_FromEquipment(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
-    UFUNCTION(BlueprintCallable, Category = "GainX|Ability")
-    UGainXEquipmentObject* GetAssociatedEquipment() const;
+    UFUNCTION(BlueprintCallable, Category = "GainX|Ability", meta = (DeterminesOutputType = "EquipmentActorClass"))
+    AGainXEquipmentActor* GetAssociatedEquipmentActor(TSubclassOf<AGainXEquipmentActor> EquipmentActorClass) const;
 
     UFUNCTION(BlueprintCallable, Category = "GainX|Ability")
-    UGainXInventoryItem* GetAssociatedItem() const;
+    UGainXInventoryItem* GetAssociatedInventoryItem() const;
 };

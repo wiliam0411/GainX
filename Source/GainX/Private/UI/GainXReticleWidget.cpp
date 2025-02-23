@@ -2,7 +2,7 @@
 
 #include "UI/GainXReticleWidget.h"
 #include "Inventory/GainXInventoryItem.h"
-#include "Weapon/GainXWeaponInstance.h"
+#include "Equipment/GainXWeaponActor.h"
 
 UGainXReticleWidget::UGainXReticleWidget(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer) {}
 
@@ -71,13 +71,13 @@ bool UGainXReticleWidget::HasFirstShotAccuracy() const
     return WeaponInstance->HasFirstShotAccuracy();
 }
 
-void UGainXReticleWidget::InitializeFromWeapon(UGainXWeaponInstance* InWeapon)
+void UGainXReticleWidget::InitializeFromWeapon(AGainXWeaponActor* InWeapon)
 {
     WeaponInstance = InWeapon;
     InventoryItem = nullptr;
     if (WeaponInstance)
     {
-        InventoryItem = Cast<UGainXInventoryItem>(WeaponInstance->GetInstigator());
+        InventoryItem = WeaponInstance->GetAssociatedInventoryItem();
     }
     OnWeaponInitialized();
 }

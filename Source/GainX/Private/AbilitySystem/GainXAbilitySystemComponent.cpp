@@ -7,17 +7,22 @@ DEFINE_LOG_CATEGORY_STATIC(LogGainXAbilitySystemComponent, All, All)
 
 UGainXAbilitySystemComponent::UGainXAbilitySystemComponent(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
+    PrimaryComponentTick.bCanEverTick = true;
+
     ClearAbilityInput();
 }
 
-void UGainXAbilitySystemComponent::InitAbilityActorInfo(AActor* InOwnerActor, AActor* InAvatarActor)
+void UGainXAbilitySystemComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
-    Super::InitAbilityActorInfo(InOwnerActor, InAvatarActor);
+    Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 }
 
 void UGainXAbilitySystemComponent::AbilityInputTagPressed(const FGameplayTag& InputTag)
 {
-    if (!InputTag.IsValid()) return;
+    if (!InputTag.IsValid())
+    {
+        return;
+    }
 
     for (const FGameplayAbilitySpec& AbilitySpec : ActivatableAbilities.Items)
     {
@@ -31,7 +36,10 @@ void UGainXAbilitySystemComponent::AbilityInputTagPressed(const FGameplayTag& In
 
 void UGainXAbilitySystemComponent::AbilityInputTagReleased(const FGameplayTag& InputTag)
 {
-    if (!InputTag.IsValid()) return;
+    if (!InputTag.IsValid())
+    {
+        return;
+    }
 
     for (const FGameplayAbilitySpec& AbilitySpec : ActivatableAbilities.Items)
     {
@@ -66,6 +74,25 @@ void UGainXAbilitySystemComponent::ClearAbilityInput()
     InputHeldSpecHandles.Reset();
 }
 
+bool UGainXAbilitySystemComponent::IsAbilityActive(const FGameplayTagContainer Tags) const
+{
+    //ABILITYLIST_SCOPE_LOCK();
+
+    for (const auto Spec : ActivatableAbilities.Items)
+    {
+        if (!Spec.IsActive() || Spec.Ability == nullptr)
+        {
+            continue;
+        }
+
+        if (Spec.Ability->AbilityTags.HasAny(Tags))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 void UGainXAbilitySystemComponent::AbilitySpecInputPressed(FGameplayAbilitySpec& Spec)
 {
     Super::AbilitySpecInputReleased(Spec);
@@ -87,6 +114,16 @@ void UGainXAbilitySystemComponent::AbilitySpecInputReleased(FGameplayAbilitySpec
     {
         // Invoke the InputReleased event. This is not replicated here. If someone is listening, they may replicate the InputReleased event to the server.
         InvokeReplicatedEvent(EAbilityGenericReplicatedEvent::InputReleased, Spec.Handle, Spec.ActivationInfo.GetActivationPredictionKey());
+    }
+}
+
+void UGainXAbilitySystemComponent::NotifyAbilityFailed(const FGameplayAbilitySpecHandle Handle, UGameplayAbility* Ability, const FGameplayTagContainer& FailureReason)
+{
+    Super::NotifyAbilityFailed(Handle, Ability, FailureReason);
+
+    if (UGainXGameplayAbility* GainXAbility = Cast<UGainXGameplayAbility>(Ability))
+    {
+        GainXAbility->OnAbilityFailedToActivate(FailureReason);
     }
 }
 
@@ -154,7 +191,7 @@ void UGainXAbilitySystemComponent::ProcessInputReleased()
     }
 }
 
-void UGainXAbilitySystemComponent::TryActivateAllAbilities() 
+void UGainXAbilitySystemComponent::TryActivateAllAbilities()
 {
     for (const FGameplayAbilitySpecHandle& AbilitySpecHandle : AbilitiesToActivate)
     {

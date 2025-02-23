@@ -4,7 +4,11 @@
 #include "Inventory/GainXInventoryItem.h"
 #include "Inventory/GainXInventoryItemFragment.h"
 
-UGainXInventoryManagerComponent::UGainXInventoryManagerComponent(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer), InventoryList(this)
+DEFINE_LOG_CATEGORY_STATIC(LogGainXInventoryManagerComponent, All, All)
+
+UGainXInventoryManagerComponent::UGainXInventoryManagerComponent(const FObjectInitializer& ObjectInitializer)
+    : Super(ObjectInitializer)
+    , InventoryList(this)
 {
     PrimaryComponentTick.bCanEverTick = false;
 }
@@ -26,18 +30,21 @@ TArray<UGainXInventoryItem*> UGainXInventoryManagerComponent::GetAllInventoryIte
 
 UGainXInventoryItem* FGainXInventoryList::AddEntry(TSubclassOf<UGainXInventoryItem> InventoryItemClass, int32 StackCount)
 {
-    const auto InventoryItemCDO = GetDefault<UGainXInventoryItem>(InventoryItemClass);
-
     FGainXInventoryEntry& NewEntry = InventoryEntries.AddDefaulted_GetRef();
-    NewEntry.Item = NewObject<UGainXInventoryItem>(OwnerComponent->GetOwner(), InventoryItemClass);
+    NewEntry.Item = NewObject<UGainXInventoryItem>(InventoryManager->GetOwner(), InventoryItemClass);
     NewEntry.StackCount = StackCount;
+
+    const UGainXInventoryItem* InventoryItemCDO = GetDefault<UGainXInventoryItem>(InventoryItemClass);
 
     for (UGainXInventoryItemFragment* Fragment : InventoryItemCDO->Fragments)
     {
-        if (Fragment)
+        if (!Fragment)
         {
-            Fragment->OnInstanceCreated(NewEntry.Item);
+            UE_LOG(LogGainXInventoryManagerComponent, Error, TEXT("Inventory Item Fragment is not valid for %s"), *InventoryItemCDO->GetName());
+            continue;
         }
+
+        Fragment->OnInstanceCreated(NewEntry.Item);
     }
 
     return NewEntry.Item;

@@ -2,14 +2,13 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "GainXInventoryManagerComponent.generated.h"
 
 class UGainXInventoryItem;
 
 /**
- * A single entry in an inventory
+ * A single inventory entry
  */
 USTRUCT(BlueprintType)
 struct FGainXInventoryEntry
@@ -18,7 +17,6 @@ struct FGainXInventoryEntry
 
     FGainXInventoryEntry() {}
 
-private:
     friend FGainXInventoryList;
     friend UGainXInventoryManagerComponent;
 
@@ -39,9 +37,9 @@ struct FGainXInventoryList
     GENERATED_BODY()
 
 public:
-    FGainXInventoryList() : OwnerComponent(nullptr) {}
+    FGainXInventoryList() : InventoryManager(nullptr) {}
 
-    FGainXInventoryList(UActorComponent* InOwnerComponent) : OwnerComponent(InOwnerComponent) {}
+    FGainXInventoryList(UActorComponent* InOwnerComponent) : InventoryManager(InOwnerComponent) {}
 
     /* Creates item instance and adds entry to InventoryEntries list */
     UGainXInventoryItem* AddEntry(TSubclassOf<UGainXInventoryItem> InventoryItemClass, int32 StackCount);
@@ -60,7 +58,7 @@ private:
     TArray<FGainXInventoryEntry> InventoryEntries;
 
     UPROPERTY()
-    TObjectPtr<UActorComponent> OwnerComponent;
+    TObjectPtr<UActorComponent> InventoryManager;
 };
 
 /**

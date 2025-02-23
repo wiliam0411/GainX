@@ -7,37 +7,54 @@
 #include "GainXInputConfig.generated.h"
 
 class UInputAction;
+class UInputMappingContext;
 
 USTRUCT(BlueprintType)
-struct FGainXInputAction
+struct FGainXInputActionEntry
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 
 public:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Meta = (Categories = "Input Action"))
     TObjectPtr<const UInputAction> InputAction = nullptr;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Meta = (Categories = "InputTag"))
-	FGameplayTag InputTag;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Meta = (Categories = "Input Tag"))
+    FGameplayTag InputTag;
+};
+
+USTRUCT(BlueprintType)
+struct FGainXInputMappingContextEntry
+{
+    GENERATED_BODY()
+
+public:
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Meta = (Categories = "Input Mapping Context"))
+    TObjectPtr<UInputMappingContext> InputMappingContext = nullptr;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Meta = (Categories = "Priority"))
+    int32 Priority = 0;
 };
 
 UCLASS()
 class GAINX_API UGainXInputConfig : public UDataAsset
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 
 public:
-	UGainXInputConfig(const FObjectInitializer& ObjectInitializer);
+    UGainXInputConfig(const FObjectInitializer& ObjectInitializer);
 
-	UFUNCTION(BlueprintCallable, Category = "GainX|Pawn")
-	const UInputAction* FindNativeInputActionForTag(const FGameplayTag& InputTag) const;
+    UFUNCTION(BlueprintCallable, Category = "GainX|InputConfig")
+    const UInputAction* FindNativeInputActionForTag(const FGameplayTag& InputTag) const;
 
-	UFUNCTION(BlueprintCallable, Category = "GainX|Pawn")
+    UFUNCTION(BlueprintCallable, Category = "GainX|InputConfig")
     const UInputAction* FindAbilityInputActionForTag(const FGameplayTag& InputTag) const;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Meta = (TitleProperty = "InputAction"))
-	TArray<FGainXInputAction> NativeInputActions;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Meta = (TitleProperty = "InputAction"))
+    TArray<FGainXInputActionEntry> NativeInputActions;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Meta = (TitleProperty = "InputAction"))
-    TArray<FGainXInputAction> AbilityInputActions;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Meta = (TitleProperty = "InputAction"))
+    TArray<FGainXInputActionEntry> AbilityInputActions;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Meta = (TitleProperty = "InputMappingContext"))
+    TArray<FGainXInputMappingContextEntry> InputMappingContexts;
 };

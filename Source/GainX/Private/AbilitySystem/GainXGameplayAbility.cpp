@@ -62,6 +62,11 @@ void UGainXGameplayAbility::TryActivateAbilityOnSpawn(const FGameplayAbilityActo
     }
 }
 
+void UGainXGameplayAbility::OnAbilityFailedToActivate(const FGameplayTagContainer& FailedReason) 
+{
+    K2_OnAbilityFailedToActivate(FailedReason);
+}
+
 void UGainXGameplayAbility::OnGiveAbility(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec)
 {
     Super::OnGiveAbility(ActorInfo, Spec);
@@ -71,33 +76,9 @@ void UGainXGameplayAbility::OnGiveAbility(const FGameplayAbilityActorInfo* Actor
     TryActivateAbilityOnSpawn(ActorInfo, Spec);
 }
 
-bool UGainXGameplayAbility::CheckCost(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, OUT FGameplayTagContainer* OptionalRelevantTags) const
+void UGainXGameplayAbility::OnRemoveAbility(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec) 
 {
-    if (!Super::CheckCost(Handle, ActorInfo, OptionalRelevantTags) || !ActorInfo)
-    {
-        return false;
-    }
+    K2_OnAbilityRemoved();
 
-    for (TObjectPtr<UGainXAbilityCost> AdditionalCost : AdditionalCosts)
-    {
-        if (AdditionalCost && !AdditionalCost->CheckCost(this, Handle, ActorInfo, OptionalRelevantTags))
-        {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-void UGainXGameplayAbility::ApplyCost(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo) const
-{
-    Super::ApplyCost(Handle, ActorInfo, ActivationInfo);
-
-    for (TObjectPtr<UGainXAbilityCost> AdditionalCost : AdditionalCosts)
-    {
-        if (AdditionalCost)
-        {
-            AdditionalCost->ApplyCost(this, Handle, ActorInfo, ActivationInfo);
-        }
-    }
+    Super::OnRemoveAbility(ActorInfo, Spec);
 }

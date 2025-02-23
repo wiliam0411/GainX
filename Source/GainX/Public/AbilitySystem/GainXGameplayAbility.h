@@ -44,25 +44,29 @@ public:
 
     EGainXAbilityActivationPolicy GetActivationPolicy() const { return ActivationPolicy; }
 
-	void TryActivateAbilityOnSpawn(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec) const;
+    void TryActivateAbilityOnSpawn(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec) const;
+
+    void OnAbilityFailedToActivate(const FGameplayTagContainer& FailedReason);
 
 protected:
     //~UGameplayAbility interface
     virtual void OnGiveAbility(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec) override;
-    virtual bool CheckCost(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, OUT FGameplayTagContainer* OptionalRelevantTags = nullptr) const override;
-    virtual void ApplyCost(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo) const override;
+    virtual void OnRemoveAbility(const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilitySpec& Spec) override;
     //~End of UGameplayAbility interface
 
     /* Called when this ability is granted to the ability system component. */
     UFUNCTION(BlueprintImplementableEvent, Category = Ability, DisplayName = "OnAbilityAdded")
     void K2_OnAbilityAdded();
 
+    /* Called when this ability is removed from the ability system component. */
+    UFUNCTION(BlueprintImplementableEvent, Category = Ability, DisplayName = "OnAbilityRemoved")
+    void K2_OnAbilityRemoved();
+
+    UFUNCTION(BlueprintImplementableEvent, Category = Ability, DisplayName = "OnAbilityFailedToActivate")
+    void K2_OnAbilityFailedToActivate(const FGameplayTagContainer& FailedReason);
+
 protected:
     /* Defines how this ability is meant to activate */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Activation)
     EGainXAbilityActivationPolicy ActivationPolicy;
-
-    /* Additional costs that must be paid to activate this ability */
-    UPROPERTY(EditDefaultsOnly, Instanced, Category = Costs)
-    TArray<TObjectPtr<UGainXAbilityCost>> AdditionalCosts;
 };

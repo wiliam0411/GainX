@@ -1,6 +1,11 @@
 // GainX, All Rights Reserved
 
 #include "Inventory/GainXInventoryItem.h"
+#include "GameFramework/GameplayMessageSubsystem.h"
+#include "NativeGameplayTags.h"
+
+UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_GainX_Event_Inventory_Stats_Added, "Event.Inventory.Stats.Added");
+UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_GainX_Event_Inventory_Stats_Removed, "Event.Inventory.Stats.Removed");
 
 UGainXInventoryItem::UGainXInventoryItem(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer) {}
 
@@ -22,14 +27,28 @@ const UGainXInventoryItemFragment* UGainXInventoryItem::FindFragmentByClass(TSub
     return nullptr;
 }
 
-void UGainXInventoryItem::AddItemStats(FGameplayTag Tag, int32 StackCount) 
+void UGainXInventoryItem::BroadcastInventoryItemMessage(FGameplayTag Channel, FGameplayTag Stats)
 {
-    ItemStats.AddStats(Tag, StackCount);
+    FGainXInventoryItemMessage Message;
+    Message.InventoryItem = this;
+    Message.InventoryStats = Stats;
+
+    UGameplayMessageSubsystem& MessageSystem = UGameplayMessageSubsystem::Get(GetWorld());
+    MessageSystem.BroadcastMessage(Channel, Message);
 }
 
-void UGainXInventoryItem::RemoveItemStats(FGameplayTag Tag, int32 StackCount) 
+void UGainXInventoryItem::AddItemStats(FGameplayTag Tag, int32 StackCount)
+{
+    ItemStats.AddStats(Tag, StackCount);
+    OnAddItemStats.Broadcast(Tag);
+    BroadcastInventoryItemMessage(TAG_GainX_Event_Inventory_Stats_Added, Tag);
+}
+
+void UGainXInventoryItem::RemoveItemStats(FGameplayTag Tag, int32 StackCount)
 {
     ItemStats.RemoveStats(Tag, StackCount);
+    OnRemoveItemStats.Broadcast(Tag);
+    BroadcastInventoryItemMessage(TAG_GainX_Event_Inventory_Stats_Removed, Tag);
 }
 
 int32 UGainXInventoryItem::GetItemStatsCount(FGameplayTag Tag) const

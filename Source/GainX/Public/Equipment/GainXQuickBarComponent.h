@@ -8,13 +8,14 @@
 
 class UGainXEquipmentManagerComponent;
 class UGainXInventoryItem;
-class UGainXEquipmentObject;
+class AGainXEquipmentActor;
 
 USTRUCT(BlueprintType)
 struct FGainXQuickBarSlotsChangedMessage
 {
     GENERATED_BODY()
 
+public:
     UPROPERTY(BlueprintReadOnly, Category = Inventory)
     TObjectPtr<AActor> Owner = nullptr;
 
@@ -27,6 +28,7 @@ struct FGainXQuickBarActiveIndexChangedMessage
 {
     GENERATED_BODY()
 
+public:
     UPROPERTY(BlueprintReadOnly, Category = Inventory)
     TObjectPtr<AActor> Owner = nullptr;
 
@@ -61,7 +63,10 @@ public:
     TArray<UGainXInventoryItem*> GetSlots() const { return Slots; }
 
     UFUNCTION(BlueprintCallable, Category = "GainX|QuickBar")
-    void AddItemToSlot(int32 SlotIndex, UGainXInventoryItem* InventoryItem);
+    bool AddItemToSlot(int32 SlotIndex, UGainXInventoryItem* InventoryItem);
+
+    UFUNCTION(BlueprintCallable, Category = "GainX|QuickBar")
+    bool AddItemToFirstFreeSlot(UGainXInventoryItem* InventoryItem);
 
     UFUNCTION(BlueprintCallable, Category = "GainX|QuickBar")
     UGainXInventoryItem* RemoveItemFromSlot(int32 SlotIndex);
@@ -69,13 +74,10 @@ public:
     virtual void BeginPlay() override;
 
 private:
-    /**/
     UGainXEquipmentManagerComponent* FindEquipmentManagerComponent() const;
 
-    /**/
     void EquipItemInSlot();
 
-    /**/
     void UnequipItemInSlot();
 
     UPROPERTY()
@@ -88,5 +90,5 @@ private:
     int32 ActiveSlotIndex = -1;
 
     UPROPERTY()
-    TObjectPtr<UGainXEquipmentObject> EquippedItem;
+    TObjectPtr<AGainXEquipmentActor> EquippedItem;
 };

@@ -13,8 +13,7 @@ class GAINX_API UGainXAbilitySystemComponent : public UAbilitySystemComponent
 public:
     UGainXAbilitySystemComponent(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
-    /* Notifies abilities about new pawn and initialize GameplayTagPropertyMap */
-    virtual void InitAbilityActorInfo(AActor* InOwnerActor, AActor* InAvatarActor) override;
+    virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
     /* Updates Input Handles arrays according to the input */
     void AbilityInputTagPressed(const FGameplayTag& InputTag);
@@ -25,12 +24,16 @@ public:
     /* Activates ability according to their activation policy */
     void ProcessAbilityInput();
 
-protected:
-    /* Wrap function that invokes input event for Wait Input Release Node */
-    virtual void AbilitySpecInputPressed(FGameplayAbilitySpec& Spec) override;
+    /* Clears Input Handles arrays */
+    void ClearAbilityInput();
 
-    /* Wrap function that invokes input event for Wait Input Release Node */
+    UFUNCTION(BlueprintCallable)
+    bool IsAbilityActive(const FGameplayTagContainer Tags) const;
+
+protected:
+    virtual void AbilitySpecInputPressed(FGameplayAbilitySpec& Spec) override;
     virtual void AbilitySpecInputReleased(FGameplayAbilitySpec& Spec) override;
+	virtual void NotifyAbilityFailed(const FGameplayAbilitySpecHandle Handle, UGameplayAbility* Ability, const FGameplayTagContainer& FailureReason) override;
 
     /* Handles to abilities that had their input pressed this frame */
     TArray<FGameplayAbilitySpecHandle> InputPressedSpecHandles;
@@ -41,7 +44,6 @@ protected:
     /* Handles to abilities that have their input held */
     TArray<FGameplayAbilitySpecHandle> InputHeldSpecHandles;
 
-private:
     /* Handles to abilities that should be activated on this tick */
     TArray<FGameplayAbilitySpecHandle> AbilitiesToActivate;
 
@@ -50,7 +52,4 @@ private:
     void ProcessInputPressed();
     void ProcessInputReleased();
     void TryActivateAllAbilities();
-
-    /* Clears Input Handles arrays */
-    void ClearAbilityInput();
 };

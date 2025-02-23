@@ -20,8 +20,6 @@
 #include "Components/GameFrameworkComponentManager.h"
 #include "Camera/GainXCameraComponent.h"
 
-const FName AGainXPlayerCharacter::NAME_BindInputsNow("BindInputsNow");
-
 AGainXPlayerCharacter::AGainXPlayerCharacter(const FObjectInitializer& ObjInit) : Super(ObjInit)
 {
     PrimaryActorTick.bCanEverTick = true;
@@ -49,14 +47,13 @@ void AGainXPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
     auto GainXInputComponent = Cast<UGainXInputComponent>(PlayerInputComponent);
     check(GainXInputComponent);
 
+    GainXInputComponent->AddInputMappingContext(InputConfig, PlayerController);
+
     TArray<uint32> BindHandles;
     GainXInputComponent->BindAbilityActions(InputConfig, this, &ThisClass::Input_AbilityInputTagPressed, &ThisClass::Input_AbilityInputTagReleased, BindHandles);
 
-    // @TODO: review Native Actions
-    GainXInputComponent->BindActionByTag(InputConfig, GainXGameplayTags::InputTag_Move, ETriggerEvent::Triggered, this, &AGainXPlayerCharacter::Move);
-    GainXInputComponent->BindActionByTag(InputConfig, GainXGameplayTags::InputTag_Look_Mouse, ETriggerEvent::Triggered, this, &AGainXPlayerCharacter::Look);
-
-    UGameFrameworkComponentManager::SendGameFrameworkComponentExtensionEvent(const_cast<APlayerController*>(PlayerController), NAME_BindInputsNow);
+    GainXInputComponent->BindNativeActionByTag(InputConfig, GainXGameplayTags::InputTag_Move, ETriggerEvent::Triggered, this, &AGainXPlayerCharacter::Move);
+    GainXInputComponent->BindNativeActionByTag(InputConfig, GainXGameplayTags::InputTag_Look_Mouse, ETriggerEvent::Triggered, this, &AGainXPlayerCharacter::Look);
 }
 
 void AGainXPlayerCharacter::Move(const FInputActionValue& InputActionValue)
@@ -92,22 +89,28 @@ void AGainXPlayerCharacter::PostInitializeComponents()
     // Hook up the delegate for all pawns, in case we spectate later
     if (PawnData)
     {
-        DefaultCamera->DetermineCameraModeDelegate.BindUObject(this, &ThisClass::DetermineCameraMode);
+        CameraComponent->DetermineCameraModeDelegate.BindUObject(this, &ThisClass::DetermineCameraMode);
     }
 }
 
 void AGainXPlayerCharacter::Input_AbilityInputTagPressed(FGameplayTag InputTag)
 {
-    if (UGainXAbilitySystemComponent* GainXASC = GetGainXAbilitySystemComponent())
+    if (!AbilitySystemComponent)
     {
-        GainXASC->AbilityInputTagPressed(InputTag);
+        UE_LOG(LogTemp, Error, TEXT("AbilitySystemComponent is not valid for player character %s when trying to press ability input tag %s"), *GetName(), *InputTag.ToString());
+        return;
     }
+
+    AbilitySystemComponent->AbilityInputTagPressed(InputTag);
 }
 
 void AGainXPlayerCharacter::Input_AbilityInputTagReleased(FGameplayTag InputTag)
 {
-    if (UGainXAbilitySystemComponent* GainXASC = GetGainXAbilitySystemComponent())
+    if (!AbilitySystemComponent)
     {
-        GainXASC->AbilityInputTagReleased(InputTag);
+        UE_LOG(LogTemp, Error, TEXT("AbilitySystemComponent is not valid for player character %s when trying to release ability input tag %s"), *GetName(), *InputTag.ToString());
+        return;
     }
+
+    AbilitySystemComponent->AbilityInputTagReleased(InputTag);
 }

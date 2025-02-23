@@ -1,25 +1,30 @@
 // GainX, All Rights Reserved
 
 #include "AbilitySystem/Abilities/GainXAbility_FromEquipment.h"
-#include "Equipment/GainXEquipmentObject.h"
 #include "Inventory/GainXInventoryItem.h"
+#include "Equipment/GainXEquipmentActor.h"
 
 UGainXAbility_FromEquipment::UGainXAbility_FromEquipment(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer) {}
 
-UGainXEquipmentObject* UGainXAbility_FromEquipment::GetAssociatedEquipment() const
+AGainXEquipmentActor* UGainXAbility_FromEquipment::GetAssociatedEquipmentActor(TSubclassOf<AGainXEquipmentActor> EquipmentActorClass) const
 {
     if (FGameplayAbilitySpec* Spec = UGameplayAbility::GetCurrentAbilitySpec())
     {
-        return Cast<UGainXEquipmentObject>(Spec->SourceObject.Get());
+        if (Spec->SourceObject.Get() && Spec->SourceObject.Get()->IsA(EquipmentActorClass))
+        {
+            return Cast<AGainXEquipmentActor>(Spec->SourceObject.Get());
+        }
     }
+
     return nullptr;
 }
 
-UGainXInventoryItem* UGainXAbility_FromEquipment::GetAssociatedItem() const
+UGainXInventoryItem* UGainXAbility_FromEquipment::GetAssociatedInventoryItem() const
 {
-    if (UGainXEquipmentObject* Equipment = GetAssociatedEquipment())
+    if (AGainXEquipmentActor* Equipment = GetAssociatedEquipmentActor(AGainXEquipmentActor::StaticClass()))
     {
-        return Cast<UGainXInventoryItem>(Equipment->GetInstigator());
+        return Equipment->GetAssociatedInventoryItem();
     }
+
     return nullptr;
 }

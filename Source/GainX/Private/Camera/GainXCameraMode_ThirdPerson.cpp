@@ -18,8 +18,6 @@ void UGainXCameraMode_ThirdPerson::UpdateView(float DeltaTime)
     FVector PivotLocation = GetPivotLocation() + CurrentCrouchOffset;
     FRotator PivotRotation = GetPivotRotation();
 
-    UE_LOG(LogTemp, Warning, TEXT("PivotLocation: %f"), PivotLocation);
-
     PivotRotation.Pitch = FMath::ClampAngle(PivotRotation.Pitch, ViewPitchMin, ViewPitchMax);
 
     View.Location = PivotLocation;

@@ -14,8 +14,6 @@ class UGainXHealthComponent;
 class AGainXPlayerState;
 class UGainXAbilitySystemComponent;
 class UGainXPawnData;
-class UGainXAbilitySet;
-class UGainXEquipmentManagerComponent;
 class UGainXExperience;
 class UCameraComponent;
 class UGainXCameraComponent;
@@ -41,30 +39,48 @@ public:
     UGainXAbilitySystemComponent* GetGainXAbilitySystemComponent() const;
     virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
-    UFUNCTION(BlueprintCallable, Category = "GainX|Character")
-    UGainXHealthComponent* GetHealthComponent() const { return HealthComponent; }
+    UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+    USkeletalMeshComponent* GetFirstPersonMesh() const;
+
+    UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+    USceneComponent* GetFirstPersonCamera() const;
 
     //~AActor interface
+    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason);
     virtual void PostInitializeComponents() override;
+    virtual void BeginPlay() override;
     virtual void Tick(float DeltaTime) override;
+    virtual void OnConstruction(const FTransform& Transform) override;
     //~End of AActor interface
+
+    //~ACharacter interface
+    virtual void OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
+    virtual void OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;
+    //~End of ACharacter interface
 
     void SetPawnData(const UGainXPawnData* InPawnData);
     const UGainXPawnData* GetPawnData() const { return PawnData; }
 
 protected:
-    /* Callback function of OnDeath */
     UFUNCTION()
     virtual void OnDeath(AActor* OwningActor);
 
+    virtual void InitializeAbilitySystem();
+    virtual void UninitializeAbilitySystem();
+
     void DisableMovementAndCollision();
 
+    /* Sets new pawn data when experience is loaded */
     void OnExperienceLoaded(const UGainXExperience* CurrentExperience);
 
+    void UpdateEyeHeight(float DeltaTime);
+
+    UFUNCTION(BlueprintImplementableEvent, meta = (DisplayName = "OnDeath"))
+    void K2_OnDeath();
+
 protected:
-    // TODO: Use camera modes instead
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GainX|Character", Meta = (AllowPrivateAccess = "true"))
-    TObjectPtr<UGainXCameraComponent> DefaultCamera;
+    TObjectPtr<UGainXCameraComponent> CameraComponent;
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GainX|Character", Meta = (AllowPrivateAccess = "true"))
     TObjectPtr<UGainXAbilitySystemComponent> AbilitySystemComponent;
@@ -77,4 +93,12 @@ protected:
 
     UPROPERTY()
     TObjectPtr<const class UGainXHealthSet> HealthSet;
+
+    UPROPERTY(EditDefaultsOnly)
+    float CrouchSpeed = 15.0f;
+
+private:
+    float StancedEyeHeight = 0.0f;
+    float CurrentEyeHeight = 0.0f;
+    float TargetEyeHeight = 0.0f;
 };

@@ -7,7 +7,7 @@ UGainXInputConfig::UGainXInputConfig(const FObjectInitializer& ObjectInitializer
 
 const UInputAction* UGainXInputConfig::FindNativeInputActionForTag(const FGameplayTag& InputTag) const
 {
-    for (const FGainXInputAction& Action : NativeInputActions)
+    for (const FGainXInputActionEntry& Action : NativeInputActions)
     {
         if (Action.InputAction && (Action.InputTag == InputTag))
         {
@@ -20,7 +20,7 @@ const UInputAction* UGainXInputConfig::FindNativeInputActionForTag(const FGamepl
 
 const UInputAction* UGainXInputConfig::FindAbilityInputActionForTag(const FGameplayTag& InputTag) const
 {
-    for (const FGainXInputAction& Action : AbilityInputActions)
+    for (const FGainXInputActionEntry& Action : AbilityInputActions)
     {
         if (Action.InputAction && (Action.InputTag == InputTag))
         {
@@ -28,6 +28,5 @@ const UInputAction* UGainXInputConfig::FindAbilityInputActionForTag(const FGamep
         }
     }
     UE_LOG(LogTemp, Error, TEXT("Can't find AbilityInputAction for InputTag [%s] on InputConfig [%s]."), *InputTag.ToString(), *GetNameSafe(this));
-
     return nullptr;
 }

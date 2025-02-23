@@ -330,7 +330,6 @@ void UGainXCameraModeStack::UpdateStack(float DeltaTime)
 {
     const int32 StackSize = CameraModeStack.Num();
 
-    UE_LOG(LogTemp, Warning, TEXT("StackSize: %d"), StackSize);
     if (StackSize <= 0)
     {
         return;

@@ -8,6 +8,25 @@
 #include "Inventory/ItemStatsContainer.h"
 #include "GainXInventoryItem.generated.h"
 
+UDELEGATE(BlueprintAuthorityOnly)
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAddItemStats, FGameplayTag, Tag);
+
+UDELEGATE(BlueprintAuthorityOnly)
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRemoveItemStats, FGameplayTag, Tag);
+
+USTRUCT(BlueprintType)
+struct FGainXInventoryItemMessage
+{
+    GENERATED_BODY()
+
+public:
+    UPROPERTY(BlueprintReadOnly)
+    TObjectPtr<UGainXInventoryItem> InventoryItem = nullptr;
+
+    UPROPERTY(BlueprintReadOnly)
+    FGameplayTag InventoryStats;
+};
+
 UCLASS(BlueprintType, Blueprintable)
 class GAINX_API UGainXInventoryItem : public UObject
 {
@@ -16,12 +35,9 @@ class GAINX_API UGainXInventoryItem : public UObject
 public:
     UGainXInventoryItem(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Display)
-    FText DisplayName;
-
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Display, Instanced)
     TArray<TObjectPtr<UGainXInventoryItemFragment>> Fragments;
-    
+
 public:
     /* Adds a specified number of stacks to the tag (does nothing if StackCount is below 1) */
     UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category = "GainX|Inventory")
@@ -48,7 +64,17 @@ public:
         return (T*)FindFragmentByClass(T::StaticClass());
     }
 
+public:
+    UPROPERTY(BlueprintAssignable)
+    FOnAddItemStats OnAddItemStats;
+
+    UPROPERTY(BlueprintAssignable)
+    FOnRemoveItemStats OnRemoveItemStats;
+
 private:
     UPROPERTY()
     FItemStatsContainer ItemStats;
+
+private:
+    void BroadcastInventoryItemMessage(FGameplayTag Channel, FGameplayTag Stats);
 };

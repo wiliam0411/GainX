@@ -231,7 +231,7 @@ void UGameFeatureAction_AddInputContextMapping::HandleControllerExtension(AActor
         RemoveInputMapping(AsController, ActiveData);
     }
     // @TODO: Why does it require specific event causing the relationship with custom class
-    else if ((EventName == UGameFrameworkComponentManager::NAME_ExtensionAdded) || (EventName == AGainXPlayerCharacter::NAME_BindInputsNow))
+    else if ((EventName == UGameFrameworkComponentManager::NAME_ExtensionAdded) /* || (EventName == AGainXPlayerCharacter::NAME_BindInputsNow)*/)
     {
         AddInputMappingForPlayer(AsController, ActiveData);
     }

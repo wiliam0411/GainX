@@ -11,7 +11,6 @@
 #include "Player/GainXPlayerController.h"
 #include "AbilitySystem/GainXAbilitySystemComponent.h"
 #include "Equipment/GainXEquipmentManagerComponent.h"
-#include "Weapon/GainXWeaponInstance.h"
 #include "Player/GainXPawnData.h"
 #include "GameModes/GainXExperience.h"
 #include "GainXGameModeBase.h"
@@ -59,8 +58,8 @@ AGainXBaseCharacter::AGainXBaseCharacter(const FObjectInitializer& ObjectInitial
     HealthComponent = CreateDefaultSubobject<UGainXHealthComponent>(TEXT("HealthComponent"));
     HealthComponent->OnDeath.AddDynamic(this, &ThisClass::OnDeath);
 
-    DefaultCamera = CreateDefaultSubobject<UGainXCameraComponent>(TEXT("DefaultCamera1"));
-    DefaultCamera->SetRelativeLocation(FVector(-300.0f, 0.0f, 75.0f));
+    CameraComponent = CreateDefaultSubobject<UGainXCameraComponent>(TEXT("DefaultCamera1"));
+    CameraComponent->SetRelativeLocation(FVector(-300.0f, 0.0f, 75.0f));
 
     AbilitySystemComponent = CreateDefaultSubobject<UGainXAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
     AbilitySystemComponent->SetIsReplicated(true);
@@ -74,7 +73,7 @@ AGainXBaseCharacter::AGainXBaseCharacter(const FObjectInitializer& ObjectInitial
     bUseControllerRotationYaw = true;
     bUseControllerRotationRoll = false;
 
-    BaseEyeHeight = 80.0f;
+    BaseEyeHeight = 65.0f;
     CrouchedEyeHeight = 50.0f;
 }
 
@@ -103,18 +102,30 @@ UAbilitySystemComponent* AGainXBaseCharacter::GetAbilitySystemComponent() const
     return GetGainXAbilitySystemComponent();
 }
 
+USkeletalMeshComponent* AGainXBaseCharacter::GetFirstPersonMesh_Implementation() const
+{
+    return nullptr;
+}
+
+USceneComponent* AGainXBaseCharacter::GetFirstPersonCamera_Implementation() const
+{
+    return nullptr;
+}
+
+void AGainXBaseCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+    UninitializeAbilitySystem();
+
+    Super::EndPlay(EndPlayReason);
+}
+
 void AGainXBaseCharacter::PostInitializeComponents()
 {
     Super::PostInitializeComponents();
 
-    check(AbilitySystemComponent);
-    AbilitySystemComponent->InitAbilityActorInfo(this, this);
+    InitializeAbilitySystem();
 
-    HealthComponent->InitializeWithAbilitySystem(AbilitySystemComponent);
-
-    // Observe FOnGainXExperienceLoaded delegate
-    UWorld* World = GetWorld();
-    if (World && World->IsGameWorld() && World->GetNetMode() != NM_Client)
+    if (GetWorld() && GetWorld()->IsGameWorld() && GetWorld()->GetNetMode() != NM_Client)
     {
         AGameStateBase* GameState = GetWorld()->GetGameState();
         check(GameState);
@@ -124,27 +135,99 @@ void AGainXBaseCharacter::PostInitializeComponents()
 
         ExperienceComponent->CallOrRegister_OnExperienceLoaded(FOnGainXExperienceLoaded::FDelegate::CreateUObject(this, &ThisClass::OnExperienceLoaded));
     }
+
+
+}
+
+void AGainXBaseCharacter::BeginPlay() 
+{
+    Super::BeginPlay();
+
+
 }
 
 void AGainXBaseCharacter::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
 
-    AbilitySystemComponent->ProcessAbilityInput();
+    UpdateEyeHeight(DeltaTime);
 
-    // TODO: Should be a part of WeaponStateComponent
-    if (UGainXEquipmentManagerComponent* EquipManagerComp = FindComponentByClass<UGainXEquipmentManagerComponent>())
+    // @TODO: TickComponent function is not working thus we meed call it here
+    AbilitySystemComponent->ProcessAbilityInput();
+}
+
+void AGainXBaseCharacter::OnConstruction(const FTransform& Transform) 
+{
+    Super::OnConstruction(Transform);
+
+    // Setup Fisrt person camera boom
+    if (GetFirstPersonCamera())
     {
-        if (auto CurrentWeapon = Cast<UGainXWeaponInstance>(EquipManagerComp->GetFirstInstanceOfType(UGainXWeaponInstance::StaticClass())))
-        {
-            CurrentWeapon->UpdateWeaponInstance(DeltaTime);
-        }
+        GetFirstPersonCamera()->SetRelativeLocation(FVector(0.0f, 0.0f, BaseEyeHeight));
+        StancedEyeHeight = BaseEyeHeight;
+        CurrentEyeHeight = StancedEyeHeight;
+        TargetEyeHeight = CurrentEyeHeight;
     }
+}
+
+void AGainXBaseCharacter::OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust)
+{
+    CurrentEyeHeight = StancedEyeHeight + HalfHeightAdjust;
+    TargetEyeHeight = CrouchedEyeHeight;
+
+    if (GetFirstPersonCamera())
+    {
+        GetFirstPersonCamera()->SetRelativeLocation(FVector(0.0f, 0.0f, CurrentEyeHeight));
+    }
+
+    Super::OnStartCrouch(HalfHeightAdjust, ScaledHalfHeightAdjust);
+}
+
+void AGainXBaseCharacter::OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust)
+{
+    CurrentEyeHeight = CrouchedEyeHeight - HalfHeightAdjust;
+    TargetEyeHeight = StancedEyeHeight;
+
+    if (GetFirstPersonCamera())
+    {
+        GetFirstPersonCamera()->SetRelativeLocation(FVector(0.0f, 0.0f, CurrentEyeHeight));
+    }
+
+    Super::OnEndCrouch(HalfHeightAdjust, ScaledHalfHeightAdjust);
 }
 
 void AGainXBaseCharacter::OnDeath(AActor* OwningActor)
 {
     DisableMovementAndCollision();
+    K2_OnDeath();
+    UninitializeAbilitySystem();
+    DetachFromControllerPendingDestroy();
+}
+
+void AGainXBaseCharacter::InitializeAbilitySystem()
+{
+    check(AbilitySystemComponent);
+    check(HealthComponent);
+
+    // Set owner and avatar actor of the ability sysytem component
+    AbilitySystemComponent->InitAbilityActorInfo(this, this);
+
+    // Bind health components delegates
+    HealthComponent->InitializeWithAbilitySystem(AbilitySystemComponent);
+}
+
+void AGainXBaseCharacter::UninitializeAbilitySystem()
+{
+    check(AbilitySystemComponent);
+    check(HealthComponent);
+
+    // Unbind health components delegates
+    HealthComponent->UninitializeFromAbilitySystem();
+
+    AbilitySystemComponent->CancelAbilities();
+    AbilitySystemComponent->ClearAbilityInput();
+    AbilitySystemComponent->RemoveAllGameplayCues();
+    AbilitySystemComponent->SetAvatarActor(nullptr);
 }
 
 void AGainXBaseCharacter::DisableMovementAndCollision()
@@ -178,10 +261,12 @@ void AGainXBaseCharacter::SetPawnData(const UGainXPawnData* InPawnData)
 
     for (const auto AbilitySet : PawnData->AbilitySets)
     {
-        if (AbilitySet)
+        if (!AbilitySet)
         {
-            AbilitySet->GiveToAbilitySystem(AbilitySystemComponent, nullptr);
+            UE_LOG(LogGainXCharacter, Error, TEXT("Trying to give non-valid ability set to character."));
         }
+
+        AbilitySet->GiveToAbilitySystem(AbilitySystemComponent, nullptr);
     }
 }
 
@@ -197,7 +282,16 @@ void AGainXBaseCharacter::OnExperienceLoaded(const UGainXExperience* CurrentExpe
         }
         else
         {
-            UE_LOG(LogGainXCharacter, Error, TEXT("AGainXBaseCharacter::OnExperienceLoaded(): Unable to find PawnData to initialize player state [%s]!"), *GetNameSafe(this));
+            UE_LOG(LogGainXCharacter, Error, TEXT("Unable to find PawnData to initialize player state [%s]!"), *GetNameSafe(this));
         }
+    }
+}
+
+void AGainXBaseCharacter::UpdateEyeHeight(float DeltaTime) 
+{
+    CurrentEyeHeight = FMath::FInterpTo(CurrentEyeHeight, TargetEyeHeight, DeltaTime, CrouchSpeed);
+    if (GetFirstPersonCamera())
+    {
+        GetFirstPersonCamera()->SetRelativeLocation(FVector(0.0f, 0.0f, CurrentEyeHeight));
     }
 }

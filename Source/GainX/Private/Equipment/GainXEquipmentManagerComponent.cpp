@@ -1,115 +1,167 @@
 // GainX, All Rights Reserved
 
 #include "Equipment/GainXEquipmentManagerComponent.h"
-#include "Equipment/GainXEquipmentDefinition.h"
 #include "AbilitySystem/GainXAbilitySystemComponent.h"
-#include "AbilitySystemGlobals.h"
-#include "Equipment/GainXEquipmentObject.h"
+#include "GameFramework/GameplayMessageSubsystem.h"
 
-/**
- * UGainXEquipmentManagerComponent
- */
+#include "AbilitySystemGlobals.h"
+#include "Equipment/GainXEquipmentActor.h"
+#include "Engine/World.h"
+#include "Player/GainXBaseCharacter.h"
+#include "NativeGameplayTags.h"
+
+DEFINE_LOG_CATEGORY_STATIC(LogGainXEquipmentManagerComponent, All, All)
+
+UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_GainX_Initialization_EquipmentComponent, "Event.Initialization.EquipmentComponent");
+
+UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_GainX_Event_Equipment_Equip, "Event.Equipment.Equip");
+UE_DEFINE_GAMEPLAY_TAG_STATIC(TAG_GainX_Event_Equipment_Unequip, "Event.Equipment.Unequip");
 
 UGainXEquipmentManagerComponent::UGainXEquipmentManagerComponent(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer), EquipmentList(this) {}
 
-UGainXEquipmentObject* UGainXEquipmentManagerComponent::EquipItem(TSubclassOf<UGainXEquipmentObject> EquipmentObject)
+void UGainXEquipmentManagerComponent::BeginPlay()
 {
-    if (!EquipmentObject)
+    Super::BeginPlay();
+}
+
+AGainXEquipmentActor* UGainXEquipmentManagerComponent::EquipItem(TSubclassOf<AGainXEquipmentActor> EquipmentItemClass, UGainXInventoryItem* AssociatedInventoryItem)
+{
+    if (!EquipmentItemClass)
     {
+        UE_LOG(LogGainXEquipmentManagerComponent, Error, TEXT("EquipItem: EquipmentItemClass is null."));
+
         return nullptr;
     }
 
-    UGainXEquipmentObject* Result = EquipmentList.AddEntry(EquipmentObject);
-    if (Result)
+    if (AGainXEquipmentActor* NewEquipmentItem = EquipmentList.AddEntry(EquipmentItemClass))
     {
-        Result->OnEquipped();
+        NewEquipmentItem->SetAssociatedInventoryItem(AssociatedInventoryItem);
+
+        NewEquipmentItem->OnEquipped();
+
+        OnEquipItem.Broadcast(NewEquipmentItem);
+
+        BroadcastEquipmentMessage(TAG_GainX_Event_Equipment_Equip, NewEquipmentItem);
+
+        return NewEquipmentItem;
     }
 
-    return Result;
-}
+    UE_LOG(LogGainXEquipmentManagerComponent, Error, TEXT("EquipItem: Failed to add new equipment item for class: %s"), *EquipmentItemClass->GetName());
 
-void UGainXEquipmentManagerComponent::UnequipItem(UGainXEquipmentObject* EquipmentObject)
-{
-    if (!EquipmentObject)
-    {
-        return;
-    }
-
-    EquipmentObject->OnUnequipped();
-    EquipmentList.RemoveEntry(EquipmentObject);
-}
-
-UGainXEquipmentObject* UGainXEquipmentManagerComponent::GetFirstInstanceOfType(TSubclassOf<UGainXEquipmentObject> EquipmentObject)
-{
-    for (FGainXEquipmentEntry& Equipment : EquipmentList.EquipmentEntries)
-    {
-        UGainXEquipmentObject* Object = Equipment.EquipmentObject;
-        if (!Object)
-        {
-            continue;
-        }
-
-        if (Object->IsA(EquipmentObject))
-        {
-            return Object;
-        }
-    }
     return nullptr;
 }
 
-/**
- * FGainXEquipmentList
- */
-
-UGainXAbilitySystemComponent* FGainXEquipmentList::GetAbilitySystemComponent() const
+void UGainXEquipmentManagerComponent::UnequipItem(AGainXEquipmentActor* EquipmentItem)
 {
-    check(OwnerComponent);
-    AActor* OwningActor = OwnerComponent->GetOwner();
-    return Cast<UGainXAbilitySystemComponent>(UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(OwningActor));
+    if (!EquipmentItem)
+    {
+        UE_LOG(LogGainXEquipmentManagerComponent, Warning, TEXT("UnequipItem: EquipmentItem is null."));
+    }
+
+    EquipmentItem->OnUnequipped();
+
+    OnUnequipItem.Broadcast();
+
+    BroadcastEquipmentMessage(TAG_GainX_Event_Equipment_Unequip, EquipmentItem);
+
+    EquipmentList.RemoveEntry(EquipmentItem);
 }
 
-UGainXEquipmentObject* FGainXEquipmentList::AddEntry(TSubclassOf<UGainXEquipmentObject> EquipmentObject)
+AGainXEquipmentActor* UGainXEquipmentManagerComponent::GetFirstInstanceOfType(TSubclassOf<AGainXEquipmentActor> EquipmentActorClass)
 {
-    check(EquipmentObject);
-    check(OwnerComponent);
-    check(OwnerComponent->GetOwner()->HasAuthority());
-
-    UGainXEquipmentObject* Result = nullptr;
-
-    const UGainXEquipmentObject* EquipmentObjectCDO = GetDefault<UGainXEquipmentObject>(EquipmentObject);
-
-    FGainXEquipmentEntry& NewEquipmentEntry = EquipmentEntries.AddDefaulted_GetRef();
-    NewEquipmentEntry.EquipmentObject = NewObject<UGainXEquipmentObject>(OwnerComponent->GetOwner(), EquipmentObject);
-    Result = NewEquipmentEntry.EquipmentObject;
-
-    if (UGainXAbilitySystemComponent* GainXASC = GetAbilitySystemComponent())
+    if (!EquipmentActorClass)
     {
-        for (TObjectPtr<const UGainXAbilitySet> AbilitySet : EquipmentObjectCDO->AbilitySetsToGrant)
+        UE_LOG(LogGainXEquipmentManagerComponent, Warning, TEXT("GetFirstInstanceOfType failed: EquipmentObjectClass is null."));
+
+        return nullptr;
+    }
+
+    for (FGainXEquipmentEntry& EquipmentEntry : EquipmentList.EquipmentEntries)
+    {
+        if (EquipmentEntry.Item && EquipmentEntry.Item->IsA(EquipmentActorClass))
         {
-            AbilitySet->GiveToAbilitySystem(GainXASC, &NewEquipmentEntry.GrantedHandles, Result);
+            return EquipmentEntry.Item;
         }
     }
 
-    Result->SpawnEquipmentActors();
+    UE_LOG(LogGainXEquipmentManagerComponent, Warning, TEXT("GetFirstInstanceOfType: No instance of type %s found."), *EquipmentActorClass->GetName());
 
-    return Result;
+    return nullptr;
 }
 
-void FGainXEquipmentList::RemoveEntry(UGainXEquipmentObject* EquipmentObject)
+void UGainXEquipmentManagerComponent::BroadcastEquipmentMessage(FGameplayTag Channel, AGainXEquipmentActor* EquipmentActor)
 {
-    for (auto EntryIt = EquipmentEntries.CreateIterator(); EntryIt; ++EntryIt)
+    FGainXEquipmentMessage Message;
+    Message.EquipmentManagerComponent = this;
+    Message.EquipmentActor = EquipmentActor;
+
+    UGameplayMessageSubsystem& MessageSystem = UGameplayMessageSubsystem::Get(GetOwner()->GetWorld());
+    MessageSystem.BroadcastMessage(Channel, Message);
+}
+
+UGainXAbilitySystemComponent* FGainXEquipmentList::GetAbilitySystemComponent() const
+{
+    check(EquipmentManager);
+    AActor* OwningActor = EquipmentManager->GetOwner();
+    return Cast<UGainXAbilitySystemComponent>(UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(OwningActor));
+}
+
+AGainXEquipmentActor* FGainXEquipmentList::AddEntry(TSubclassOf<AGainXEquipmentActor> EquipmentItemClass)
+{
+    check(EquipmentItemClass);
+    check(EquipmentManager);
+    check(EquipmentManager->GetOwner()->HasAuthority());
+
+    FGainXEquipmentEntry& NewEquipmentEntry = EquipmentEntries.AddDefaulted_GetRef();
+
+    if (AGainXBaseCharacter* OwningCharacter = Cast<AGainXBaseCharacter>(EquipmentManager->GetOwner()))
     {
-        FGainXEquipmentEntry& Entry = *EntryIt;
-        if (Entry.EquipmentObject == EquipmentObject)
+        if (USkeletalMeshComponent* FirstPersonMesh = OwningCharacter->GetFirstPersonMesh())
         {
+            AGainXEquipmentActor* NewActor = EquipmentManager->GetWorld()->SpawnActorDeferred<AGainXEquipmentActor>(EquipmentItemClass, FTransform::Identity, OwningCharacter);
+            NewActor->FinishSpawning(FTransform::Identity, true);
+            NewActor->SetActorRelativeTransform(NewActor->AttachTransform);
+            NewActor->AttachToComponent(FirstPersonMesh, FAttachmentTransformRules::KeepRelativeTransform, NewActor->AttachSocket);
+            NewEquipmentEntry.Item = NewActor;
+        }
+    }
+
+    // If the Ability System Component is valid, grant item's abilities
+    if (UGainXAbilitySystemComponent* GainXASC = GetAbilitySystemComponent())
+    {
+        const AGainXEquipmentActor* EquipmentObjectCDO = GetDefault<AGainXEquipmentActor>(EquipmentItemClass);
+        for (TObjectPtr<const UGainXAbilitySet> AbilitySet : EquipmentObjectCDO->AbilitySetsToGrant)
+        {
+            AbilitySet->GiveToAbilitySystem(GainXASC, &NewEquipmentEntry.GrantedHandles, NewEquipmentEntry.Item);
+        }
+    }
+
+    return NewEquipmentEntry.Item;
+}
+
+void FGainXEquipmentList::RemoveEntry(AGainXEquipmentActor* EquipmentItem)
+{
+    check(EquipmentItem);
+
+    // Iterate through the EquipmentEntries to find the matching EquipmentItem
+    for (auto EquipmentEntryIt = EquipmentEntries.CreateIterator(); EquipmentEntryIt; ++EquipmentEntryIt)
+    {
+        FGainXEquipmentEntry& EquipmentEntry = *EquipmentEntryIt;
+        if (EquipmentEntry.Item == EquipmentItem)
+        {
+            // Remove granted item's abilities from the ability system component
             if (UGainXAbilitySystemComponent* GainXASC = GetAbilitySystemComponent())
             {
-                Entry.GrantedHandles.TakeFromAbilitySystem(GainXASC);
+                EquipmentEntry.GrantedHandles.TakeFromAbilitySystem(GainXASC);
+            }
+            else
+            {
+                UE_LOG(LogTemp, Warning, TEXT("Ability System Component is null. Cannot remove granted handles for item: %s"), *EquipmentItem->GetName());
             }
 
-            EquipmentObject->DestroyEquipmentActors();
+            EquipmentItem->Destroy();
 
-            EntryIt.RemoveCurrent();
+            EquipmentEntryIt.RemoveCurrent();
         }
     }
 }

@@ -1,30 +1,31 @@
 // GainX, All Rights Reserved
 
 #include "AbilitySystem/Abilities/GainXAbility_RangedWeapon.h"
-#include "Weapon/GainXWeaponInstance.h"
+#include "AbilitySystemBlueprintLibrary.h"
+#include "Equipment/GainXWeaponActor.h"
 
 UGainXAbility_RangedWeapon::UGainXAbility_RangedWeapon(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer) {}
 
-UGainXWeaponInstance* UGainXAbility_RangedWeapon::GetWeaponInstance() const
+AGainXWeaponActor* UGainXAbility_RangedWeapon::GetWeaponActor() const
 {
-    return Cast<UGainXWeaponInstance>(GetAssociatedEquipment());
+    return Cast<AGainXWeaponActor>(GetAssociatedEquipmentActor(AGainXEquipmentActor::StaticClass()));
 }
 
-FHitResult UGainXAbility_RangedWeapon::WeaponTrace(const FVector& StartTrace, const FVector& EndTrace, TArray<FHitResult>& OutHitResults) const
+FHitResult UGainXAbility_RangedWeapon::TraceSingleBullet(const FVector& StartTrace, const FVector& EndTrace) const
 {
     TArray<FHitResult> HitResults;
-
     const ECollisionChannel TraceChannel = ECollisionChannel::ECC_GameTraceChannel2;
-
-    FCollisionQueryParams TraceParams(SCENE_QUERY_STAT(WeaponTrace), true, GetAvatarActorFromActorInfo());
+    FCollisionQueryParams TraceParams(SCENE_QUERY_STAT(TraceSingleBullet), true, GetAvatarActorFromActorInfo());
 
     GetWorld()->LineTraceMultiByChannel(HitResults, StartTrace, EndTrace, TraceChannel, TraceParams);
 
     FHitResult Hit(ForceInit);
+
     if (HitResults.Num() > 0)
     {
         Hit = HitResults.Last();
     }
+
     else
     {
         Hit.TraceStart = StartTrace;
@@ -36,95 +37,44 @@ FHitResult UGainXAbility_RangedWeapon::WeaponTrace(const FVector& StartTrace, co
     return Hit;
 }
 
-void UGainXAbility_RangedWeapon::TraceBulletsInCartridge(const FRangedWeaponFiringInput& InputData, TArray<FHitResult>& OutHits)
+void UGainXAbility_RangedWeapon::TraceCartridge(FVector StartTrace, FVector AimDirection, TArray<FHitResult>& OutHits)
 {
-    UGainXWeaponInstance* WeaponData = InputData.EquipmentWeapon;
-    check(WeaponData);
+    const AGainXWeaponActor* WeaponInstance = GetWeaponActor();
+    check(WeaponInstance);
 
-    const int32 BulletsPerCartridge = WeaponData->GetBulletsPerCartridge();
-
-    for (int32 BulletIndex = 0; BulletIndex < BulletsPerCartridge; ++BulletIndex)
+    for (int32 BulletIndex = 0; BulletIndex < WeaponInstance->GetBulletsPerCartridge(); ++BulletIndex)
     {
-        const float BaseSpreadAngle = WeaponData->GetCalculatedSpreadAngle();
-
-        const float SpreadAngleMultiplier = WeaponData->GetCalculatedSpreadAngleMultiplier();
-
+        // Here we calculating spread
+        const float BaseSpreadAngle = WeaponInstance->GetCalculatedSpreadAngle();
+        const float SpreadAngleMultiplier = WeaponInstance->GetCalculatedSpreadAngleMultiplier();
         const float ActualSpreadAngle = BaseSpreadAngle * SpreadAngleMultiplier;
-
         const float HalfSpreadAngleInRadians = FMath::DegreesToRadians(ActualSpreadAngle * 0.5f);
+        const FVector BulletDir = VRandConeNormalDistribution(AimDirection, HalfSpreadAngleInRadians, WeaponInstance->GetSpreadExponent());
 
-        const FVector BulletDir = VRandConeNormalDistribution(InputData.AimDir, HalfSpreadAngleInRadians, WeaponData->GetSpreadExponent());
+        const FVector EndTrace = StartTrace + BulletDir * WeaponInstance->GetMaxDamageRange();
 
-        const FVector EndTrace = InputData.StartTrace + (BulletDir * WeaponData->GetMaxDamageRange());
-
-        TArray<FHitResult> AllImpacts;
-
-        FHitResult Impact = WeaponTrace(InputData.StartTrace, EndTrace, AllImpacts);
-
-        OutHits.Add(Impact);
+        OutHits.Add(TraceSingleBullet(StartTrace, EndTrace));
     }
 }
 
 //@TODO: Should do more complicated logic here when the player is close to a wall, etc...
 void UGainXAbility_RangedWeapon::PerformLocalTargeting(TArray<FHitResult>& OutHits)
 {
-    const auto AvatarPawn = Cast<APawn>(GetAvatarActorFromActorInfo());
-    if (!AvatarPawn || !AvatarPawn->IsLocallyControlled())
+    if (const APawn* AvatarPawn = Cast<APawn>(GetAvatarActorFromActorInfo()))
     {
-        return;
-    }
+        FVector CameraLocation = AvatarPawn->GetActorLocation();
+        FRotator CameraRotation = AvatarPawn->GetControlRotation();
 
-    UGainXWeaponInstance* WeaponData = GetWeaponInstance();
-    if (!WeaponData)
-    {
-        return;
-    }
+        if (const APlayerController* AvatarPlayerController = Cast<APlayerController>(AvatarPawn->Controller))
+        {
+            AvatarPlayerController->GetPlayerViewPoint(/*out*/ CameraLocation, /*out*/ CameraRotation);
+        }
 
-    FVector CamLoc;
-    FRotator CamRot;
+        const FTransform CameraTransform = FTransform(CameraRotation, CameraLocation);
+        FVector StartTrace = CameraTransform.GetTranslation();
+        FVector AimDir = CameraTransform.GetUnitAxis(EAxis::X);
 
-    const auto AvatarPlayerController = Cast<APlayerController>(AvatarPawn->Controller);
-    if (AvatarPlayerController)
-    {
-        AvatarPlayerController->GetPlayerViewPoint(/*out*/ CamLoc, /*out*/ CamRot);
-    }
-    else
-    {
-        CamLoc = AvatarPawn->GetActorLocation();
-        CamRot = AvatarPawn->GetControlRotation();
-    }
-
-    const auto TargetTransform = FTransform(CamRot, CamLoc);
-
-    FRangedWeaponFiringInput FiringInputData;
-    FiringInputData.EquipmentWeapon = WeaponData;
-    FiringInputData.AimDir = TargetTransform.GetUnitAxis(EAxis::X);
-    FiringInputData.StartTrace = TargetTransform.GetTranslation();
-    FiringInputData.EndAim = FiringInputData.StartTrace + FiringInputData.AimDir * WeaponData->GetMaxDamageRange();
-
-    TraceBulletsInCartridge(FiringInputData, OutHits);
-}
-
-void UGainXAbility_RangedWeapon::OnTargetDataReadyCallback(const FGameplayAbilityTargetDataHandle& InData)
-{
-
-    // Take ownership of the target data to make sure no callbacks into game code invalidate it out from under us
-    FGameplayAbilityTargetDataHandle LocalTargetDataHandle(MoveTemp(const_cast<FGameplayAbilityTargetDataHandle&>(InData)));
-
-    // See if we still have ammo
-    if (CommitAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo))
-    {
-        // We fired the weapon, add spread
-        UGainXWeaponInstance* WeaponData = GetWeaponInstance();
-        check(WeaponData);
-        WeaponData->AddSpread();
-
-        // Blueprint Implementable Event
-        OnRangedWeaponTargetDataReady(LocalTargetDataHandle);
-    }
-    else
-    {
-        K2_EndAbility();
+        TraceCartridge(StartTrace, AimDir, OutHits);
     }
 }
 
@@ -161,40 +111,26 @@ void UGainXAbility_RangedWeapon::StartRangedWeaponTargeting()
     PerformLocalTargeting(/*out*/ FoundHits);
 
     FGameplayAbilityTargetDataHandle TargetData;
-
-    if (FoundHits.Num() > 0)
+    for (const FHitResult& FoundHit : FoundHits)
     {
-        for (const FHitResult& FoundHit : FoundHits)
-        {
-            FGameplayAbilityTargetData_SingleTargetHit* NewTargetData = new FGameplayAbilityTargetData_SingleTargetHit();
-            NewTargetData->HitResult = FoundHit;
-            TargetData.Add(NewTargetData);
-        }
+        FGameplayAbilityTargetData_SingleTargetHit* NewTargetData = new FGameplayAbilityTargetData_SingleTargetHit();
+        NewTargetData->HitResult = FoundHit;
+        TargetData.Add(NewTargetData);
     }
 
-    OnTargetDataReadyCallback(TargetData);
+    check(GetWeaponActor());
+    GetWeaponActor()->AddSpread();
+
+    OnRangedWeaponTargetDataReady(TargetData);
 }
 
-FGameplayCueParameters UGainXAbility_RangedWeapon::MakeGameplayCueParametersFromTargetData(const FGameplayAbilityTargetDataHandle& InData)
+void UGainXAbility_RangedWeapon::GetHitResultsFromTargetData(const FGameplayAbilityTargetDataHandle& InData, TArray<FHitResult>& HitResults) const
 {
-    TArray<FVector> HitPosArray;
-    TArray<FVector> HitNorArray;
+    HitResults.Empty();
 
     for (int32 Index = 0; Index < InData.Num(); ++Index)
     {
-        const auto CurrentTargetData = static_cast<const FGameplayAbilityTargetData_SingleTargetHit*>(InData.Get(Index));
-        const FVector HitPos = CurrentTargetData->GetHitResult()->ImpactPoint;
-        const FVector HitNor = CurrentTargetData->GetHitResult()->ImpactNormal;
-        HitPosArray.Add(HitPos);
-        HitNorArray.Add(HitNor);
+        FGameplayAbilityTargetData* CurrentTargetData = InData.Data[Index].Get();
+        HitResults.Add(*CurrentTargetData->GetHitResult());
     }
-
-    auto TracerData = NewObject<UGainXTracerData>();
-    TracerData->SetHitPositions(HitPosArray);
-    TracerData->SetHitNormals(HitNorArray);
-
-    FGameplayCueParameters CueParameters;
-    CueParameters.SourceObject = TracerData;
-
-    return CueParameters;
 }

@@ -17,23 +17,29 @@ class GAINX_API UGainXInputComponent : public UEnhancedInputComponent
 public:
     UGainXInputComponent(const FObjectInitializer& ObjectInitializer);
 
+    /* Binds function to single native input action */
     template <class UserClass, typename FuncType>
-    void BindActionByTag(const UGainXInputConfig* InputConfig, const FGameplayTag& InputTag, ETriggerEvent TriggerEvent, UserClass* Object, FuncType Func);
+    void BindNativeActionByTag(const UGainXInputConfig* InputConfig, const FGameplayTag& InputTag, ETriggerEvent TriggerEvent, UserClass* Object, FuncType Func);
 
+    /* Binds pressed and released functions to input action and passes them input tag as a parameter */
     template <class UserClass, typename PressedFuncType, typename ReleasedFuncType>
     void BindAbilityActions(const UGainXInputConfig* InputConfig, UserClass* Object, PressedFuncType PressedFunc, ReleasedFuncType ReleasedFunc, TArray<uint32>& BindHandles);
 
+    /* Removes the binds with the specified handles */
     void RemoveBinds(TArray<uint32>& BindHandles);
+
+    /* Adds mapping context for given controller */
+    void AddInputMappingContext(const UGainXInputConfig* InputConfig, APlayerController* PlayerController);
 };
 
 template <class UserClass, typename FuncType>
-void UGainXInputComponent::BindActionByTag(const UGainXInputConfig* InputConfig, const FGameplayTag& InputTag, ETriggerEvent TriggerEvent, UserClass* Object, FuncType Func)
+void UGainXInputComponent::BindNativeActionByTag(const UGainXInputConfig* InputConfig, const FGameplayTag& InputTag, ETriggerEvent TriggerEvent, UserClass* Object, FuncType Func)
 {
     check(InputConfig);
 
-    if (const UInputAction* IA = InputConfig->FindNativeInputActionForTag(InputTag))
+    if (const UInputAction* InputAction = InputConfig->FindNativeInputActionForTag(InputTag))
     {
-        BindAction(IA, TriggerEvent, Object, Func);
+        BindAction(InputAction, TriggerEvent, Object, Func);
     }
 }
 
@@ -42,18 +48,18 @@ void UGainXInputComponent::BindAbilityActions(const UGainXInputConfig* InputConf
 {
     check(InputConfig);
 
-    for (const FGainXInputAction& Action : InputConfig->AbilityInputActions)
+    for (const FGainXInputActionEntry& InputActionEntry : InputConfig->AbilityInputActions)
     {
-        if (Action.InputAction && Action.InputTag.IsValid())
+        if (InputActionEntry.InputAction && InputActionEntry.InputTag.IsValid())
         {
             if (PressedFunc)
             {
-                BindHandles.Add(BindAction(Action.InputAction, ETriggerEvent::Started, Object, PressedFunc, Action.InputTag).GetHandle());
+                BindHandles.Add(BindAction(InputActionEntry.InputAction, ETriggerEvent::Started, Object, PressedFunc, InputActionEntry.InputTag).GetHandle());
             }
 
             if (ReleasedFunc)
             {
-                BindHandles.Add(BindAction(Action.InputAction, ETriggerEvent::Completed, Object, ReleasedFunc, Action.InputTag).GetHandle());
+                BindHandles.Add(BindAction(InputActionEntry.InputAction, ETriggerEvent::Completed, Object, ReleasedFunc, InputActionEntry.InputTag).GetHandle());
             }
         }
     }

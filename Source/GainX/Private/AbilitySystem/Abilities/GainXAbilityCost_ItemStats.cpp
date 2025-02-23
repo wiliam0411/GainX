@@ -15,7 +15,7 @@ bool UGainXAbilityCost_ItemStats::CheckCost(
         return false;
     }
 
-    const UGainXInventoryItem* InventoryItem = EquipmentAbility->GetAssociatedItem();
+    const UGainXInventoryItem* InventoryItem = EquipmentAbility->GetAssociatedInventoryItem();
     if (!InventoryItem)
     {
         return false;
@@ -40,7 +40,7 @@ void UGainXAbilityCost_ItemStats::ApplyCost(
         return;
     }
 
-    UGainXInventoryItem* InventoryItem = EquipmentAbility->GetAssociatedItem();
+    UGainXInventoryItem* InventoryItem = EquipmentAbility->GetAssociatedInventoryItem();
     if (!InventoryItem)
     {
         return;
