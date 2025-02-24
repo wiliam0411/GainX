@@ -24,7 +24,10 @@ public class GainX : ModuleRules
             "GameFeatures",
             "ModularGameplay",
             "ModularGameplayActors",
-            "AsyncMixin"
+            "AsyncMixin",
+            "UMG",
+            "AIModule",
+            "EnhancedInput"
         });
 
         PrivateDependencyModuleNames.AddRange(new string[]
