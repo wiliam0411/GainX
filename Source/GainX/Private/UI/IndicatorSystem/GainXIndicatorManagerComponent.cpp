@@ -21,9 +21,13 @@ UGainXIndicatorManagerComponent* UGainXIndicatorManagerComponent::GetComponent(A
 
 void UGainXIndicatorManagerComponent::AddIndicator(UIndicatorDescriptor* IndicatorDescriptor) 
 {
-    IndicatorDescriptor->SetIndicatorManagerComponent(this);
-    OnIndicatorAdded.Broadcast(IndicatorDescriptor);
-    Indicators.Add(IndicatorDescriptor);
+    if (IndicatorDescriptor)
+    {
+        IndicatorDescriptor->SetIndicatorManagerComponent(this);
+
+        OnIndicatorAdded.Broadcast(IndicatorDescriptor);
+        Indicators.Add(IndicatorDescriptor);
+    }
 }
 
 void UGainXIndicatorManagerComponent::RemoveIndicator(UIndicatorDescriptor* IndicatorDescriptor) 
