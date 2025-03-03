@@ -59,7 +59,6 @@ bool UGainXQuickBarComponent::AddItemToSlot(int32 SlotIndex, UGainXInventoryItem
     // Check if the slot index is valid and the inventory item is not null
     if (!Slots.IsValidIndex(SlotIndex) || !InventoryItem)
     {
-        UE_LOG(LogGainXQuickBarComponent, Warning, TEXT("Invalid slot index: %d or null inventory item"), SlotIndex);
         return false;
     }
 
@@ -88,9 +87,16 @@ bool UGainXQuickBarComponent::AddItemToFirstFreeSlot(UGainXInventoryItem* Invent
     {
         if (AddItemToSlot(SlotIndex, InventoryItem))
         {
+            // If there was no slot active, set the first filled slot as active
+            if (ActiveSlotIndex == -1)
+            {
+                SetActiveSlotIndex(SlotIndex);
+            }
+
             return true;
         }
     }
+
     return false;
 }
 
@@ -129,9 +135,48 @@ UGainXInventoryItem* UGainXQuickBarComponent::RemoveItemFromSlot(int32 SlotIndex
     return nullptr;
 }
 
+UGainXInventoryItem* UGainXQuickBarComponent::RemoveItemFromActiveSlot()
+{
+    if (Slots.IsValidIndex(ActiveSlotIndex) && Slots[ActiveSlotIndex] != nullptr)
+    {
+        // Cache pointer on removed item in order to return it
+        UGainXInventoryItem* RemovedItem = Slots[ActiveSlotIndex];
+
+        // Clear slot
+        Slots[ActiveSlotIndex] = nullptr;
+
+        // Broadcast message to UI
+        FGainXQuickBarSlotsChangedMessage Message;
+        Message.Owner = GetOwner();
+        Message.Slots = Slots;
+
+        UGameplayMessageSubsystem& MessageSystem = UGameplayMessageSubsystem::Get(this);
+        MessageSystem.BroadcastMessage(TAG_GainX_QuickBar_Message_SlotsChanged, Message);
+
+
+
+        // Trying to find first filled slot and set it as active
+        for (int32 SlotIndex = 0; SlotIndex < NumSlots; ++SlotIndex)
+        {
+            if (Slots[SlotIndex] != nullptr)
+            {
+                SetActiveSlotIndex(SlotIndex);
+
+                return RemovedItem;
+            }
+        }
+
+        // If no filled slots found, switching to hands
+        SetActiveSlotIndex(-1);
+
+        return RemovedItem;
+    }
+
+    return nullptr;
+}
+
 void UGainXQuickBarComponent::BeginPlay()
 {
-    // @TODO: Maybe doing this in constructor?
     if (Slots.Num() < NumSlots)
     {
         Slots.AddDefaulted(NumSlots - Slots.Num());
@@ -142,10 +187,8 @@ void UGainXQuickBarComponent::BeginPlay()
 
 void UGainXQuickBarComponent::SetActiveSlotIndex(int32 NewIndex)
 {
-    // Check if the new index is valid and different from the current active index
-    if (!Slots.IsValidIndex(NewIndex) || (ActiveSlotIndex == NewIndex))
+    if (ActiveSlotIndex == NewIndex || (!Slots.IsValidIndex(NewIndex) && NewIndex != -1))
     {
-        UE_LOG(LogGainXQuickBarComponent, Warning, TEXT("SetActiveSlotIndex: Invalid index or same index: %d"), NewIndex);
         return;
     }
 
@@ -153,7 +196,10 @@ void UGainXQuickBarComponent::SetActiveSlotIndex(int32 NewIndex)
 
     ActiveSlotIndex = NewIndex;
 
-    EquipItemInSlot();
+    if (NewIndex != -1)
+    {
+        EquipItemInSlot();
+    }
 
     // Creating and broadcasting message for UI
     FGainXQuickBarActiveIndexChangedMessage Message;
@@ -193,20 +239,9 @@ void UGainXQuickBarComponent::EquipItemInSlot()
                     EquippedItem = EquipmentManager->EquipItem(EquipmentItemClass, SlotItem);
                     return;
                 }
-
-                UE_LOG(LogGainXQuickBarComponent, Warning, TEXT("EquipItemInSlot: Equipment manager component not found"));
-                return;
             }
-
-            UE_LOG(LogGainXQuickBarComponent, Warning, TEXT("EquipItemInSlot: No equipment item class found for item in slot: %d"), ActiveSlotIndex);
-            return;
         }
-
-        UE_LOG(LogGainXQuickBarComponent, Warning, TEXT("EquipItemInSlot: No equippable item fragment found for item in slot: %d"), ActiveSlotIndex);
-        return;
     }
-
-    UE_LOG(LogGainXQuickBarComponent, Warning, TEXT("EquipItemInSlot: No item found in slot: %d"), ActiveSlotIndex);
 }
 
 void UGainXQuickBarComponent::UnequipItemInSlot()
@@ -218,12 +253,6 @@ void UGainXQuickBarComponent::UnequipItemInSlot()
         {
             EquipmentManager->UnequipItem(EquippedItem);
             EquippedItem = nullptr;
-            return;
         }
-
-        UE_LOG(LogGainXQuickBarComponent, Warning, TEXT("EquipItemInSlot: Trying to unequip empty item"));
-        return;
     }
-
-    UE_LOG(LogGainXQuickBarComponent, Warning, TEXT("EquipItemInSlot: Equipment manager component not found"));
 }

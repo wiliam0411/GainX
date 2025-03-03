@@ -28,8 +28,6 @@ AGainXEquipmentActor* UGainXEquipmentManagerComponent::EquipItem(TSubclassOf<AGa
 {
     if (!EquipmentItemClass)
     {
-        UE_LOG(LogGainXEquipmentManagerComponent, Error, TEXT("EquipItem: EquipmentItemClass is null."));
-
         return nullptr;
     }
 
@@ -55,7 +53,7 @@ void UGainXEquipmentManagerComponent::UnequipItem(AGainXEquipmentActor* Equipmen
 {
     if (!EquipmentItem)
     {
-        UE_LOG(LogGainXEquipmentManagerComponent, Warning, TEXT("UnequipItem: EquipmentItem is null."));
+        return;
     }
 
     EquipmentItem->OnUnequipped();
@@ -132,10 +130,12 @@ AGainXEquipmentActor* FGainXEquipmentList::AddEntry(TSubclassOf<AGainXEquipmentA
         const AGainXEquipmentActor* EquipmentObjectCDO = GetDefault<AGainXEquipmentActor>(EquipmentItemClass);
         for (TObjectPtr<const UGainXAbilitySet> AbilitySet : EquipmentObjectCDO->AbilitySetsToGrant)
         {
-            AbilitySet->GiveToAbilitySystem(GainXASC, &NewEquipmentEntry.GrantedHandles, NewEquipmentEntry.Item);
+            if (AbilitySet)
+            {
+                AbilitySet->GiveToAbilitySystem(GainXASC, &NewEquipmentEntry.GrantedHandles, NewEquipmentEntry.Item);
+            }
         }
     }
-
     return NewEquipmentEntry.Item;
 }
 

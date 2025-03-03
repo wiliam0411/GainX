@@ -71,6 +71,9 @@ public:
     UFUNCTION(BlueprintCallable, Category = "GainX|QuickBar")
     UGainXInventoryItem* RemoveItemFromSlot(int32 SlotIndex);
 
+    UFUNCTION(BlueprintCallable, Category = "GainX|QuickBar")
+    UGainXInventoryItem* RemoveItemFromActiveSlot();
+
     virtual void BeginPlay() override;
 
 private:
@@ -78,6 +81,7 @@ private:
 
     void EquipItemInSlot();
 
+    // Clears EquippedItem
     void UnequipItemInSlot();
 
     UPROPERTY()
