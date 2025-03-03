@@ -6,20 +6,22 @@
 
 DEFINE_LOG_CATEGORY_STATIC(LogGainXInventoryManagerComponent, All, All)
 
-UGainXInventoryManagerComponent::UGainXInventoryManagerComponent(const FObjectInitializer& ObjectInitializer)
-    : Super(ObjectInitializer)
-    , InventoryList(this)
+UGainXInventoryManagerComponent::UGainXInventoryManagerComponent(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer), InventoryList(this)
 {
     PrimaryComponentTick.bCanEverTick = false;
 }
 
 UGainXInventoryItem* UGainXInventoryManagerComponent::AddInventoryItem(TSubclassOf<UGainXInventoryItem> InventoryItemClass, int32 StackCount)
 {
+    check(InventoryItemClass);
+
     return InventoryList.AddEntry(InventoryItemClass, StackCount);
 }
 
 void UGainXInventoryManagerComponent::RemoveInventoryItem(UGainXInventoryItem* ItemInstance)
 {
+    check(ItemInstance);
+
     InventoryList.RemoveEntry(ItemInstance);
 }
 
