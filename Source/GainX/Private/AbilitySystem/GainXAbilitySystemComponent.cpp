@@ -2,6 +2,7 @@
 
 #include "AbilitySystem/GainXAbilitySystemComponent.h"
 #include "AbilitySystem/GainXGameplayAbility.h"
+#include "AbilitySystem/AbilityTagRelationshipMapping.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogGainXAbilitySystemComponent, All, All)
 
@@ -135,6 +136,19 @@ void UGainXAbilitySystemComponent::NotifyAbilityFailed(const FGameplayAbilitySpe
     {
         GainXAbility->OnAbilityFailedToActivate(FailureReason);
     }
+}
+
+void UGainXAbilitySystemComponent::ApplyAbilityBlockAndCancelTags(const FGameplayTagContainer& AbilityTags, UGameplayAbility* RequestingAbility, bool bEnableBlockTags, const FGameplayTagContainer& BlockTags, bool bExecuteCancelTags, const FGameplayTagContainer& CancelTags) 
+{
+    FGameplayTagContainer ModifiedBlockTags = BlockTags;
+    FGameplayTagContainer ModifiedCancelTags = CancelTags;
+
+    if (TagRelationshipMapping)
+    {
+        TagRelationshipMapping->GetAbilityTagsToBlockAndCancel(AbilityTags, &ModifiedBlockTags, &ModifiedCancelTags);
+    }
+
+    Super::ApplyAbilityBlockAndCancelTags(AbilityTags, RequestingAbility, bEnableBlockTags, ModifiedBlockTags, bExecuteCancelTags, ModifiedCancelTags);
 }
 
 void UGainXAbilitySystemComponent::ProcessInputHeld()

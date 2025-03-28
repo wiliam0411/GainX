@@ -9,6 +9,7 @@
 class UGainXEquipmentManagerComponent;
 class UGainXInventoryItem;
 class AGainXEquipmentActor;
+class UGainXAbilitySystemComponent;
 
 USTRUCT(BlueprintType)
 struct FGainXQuickBarSlotsChangedMessage
@@ -48,16 +49,19 @@ public:
     UGainXQuickBarComponent(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
     UFUNCTION(BlueprintCallable, Category = "GainX|QuickBar")
-    void CycleActiveSlotForward();
-
-    UFUNCTION(BlueprintCallable, Category = "GainX|QuickBar")
-    void CycleActiveSlotBackward();
-
-    UFUNCTION(BlueprintCallable, Category = "GainX|QuickBar")
-    void SetActiveSlotIndex(int32 NewIndex);
-
-    UFUNCTION(BlueprintCallable, BlueprintPure = false, Category = "GainX|QuickBar")
     int32 GetActiveSlotIndex() const { return ActiveSlotIndex; }
+
+    UFUNCTION(BlueprintCallable, Category = "GainX|QuickBar")
+    int32 GetNextSlotIndex() const;
+
+    UFUNCTION(BlueprintCallable, Category = "GainX|QuickBar")
+    int32 GetPreviousSlotIndex() const;
+
+    UFUNCTION(BlueprintCallable, Category = "GainX|QuickBar")
+    int32 GetFirstFilledSlotIndex() const;
+
+    UFUNCTION(BlueprintCallable, Category = "GainX|QuickBar")
+    int32 GetFirstFreeSlotIndex() const;
 
     UFUNCTION(BlueprintCallable, BlueprintPure = false, Category = "GainX|QuickBar")
     TArray<UGainXInventoryItem*> GetSlots() const { return Slots; }
@@ -66,26 +70,20 @@ public:
     bool AddItemToSlot(int32 SlotIndex, UGainXInventoryItem* InventoryItem);
 
     UFUNCTION(BlueprintCallable, Category = "GainX|QuickBar")
-    bool AddItemToFirstFreeSlot(UGainXInventoryItem* InventoryItem);
-
-    UFUNCTION(BlueprintCallable, Category = "GainX|QuickBar")
     UGainXInventoryItem* RemoveItemFromSlot(int32 SlotIndex);
 
-    UFUNCTION(BlueprintCallable, Category = "GainX|QuickBar")
-    UGainXInventoryItem* RemoveItemFromActiveSlot();
+    void ChangeActiveSlotIndex(int32 NewIndex);
 
-    virtual void BeginPlay() override;
+    // Spawns weapon actor and attaches it to the character
+    void EquipItemInSlot();
+
+    // Destroy weapon actor
+    void UnequipItemInSlot();
+
+    AGainXEquipmentActor* GetEquipmentActor() const { return EquippedItem; };
 
 private:
     UGainXEquipmentManagerComponent* FindEquipmentManagerComponent() const;
-
-    void EquipItemInSlot();
-
-    // Clears EquippedItem
-    void UnequipItemInSlot();
-
-    UPROPERTY()
-    int32 NumSlots = 3;
 
     UPROPERTY()
     TArray<TObjectPtr<UGainXInventoryItem>> Slots;

@@ -5,6 +5,8 @@
 #include "AbilitySystemComponent.h"
 #include "GainXAbilitySystemComponent.generated.h"
 
+class UAbilityTagRelationshipMapping;
+
 UCLASS()
 class GAINX_API UGainXAbilitySystemComponent : public UAbilitySystemComponent
 {
@@ -30,10 +32,18 @@ public:
     UFUNCTION(BlueprintCallable)
     bool IsAbilityActive(const FGameplayTagContainer Tags) const;
 
+    /* Sets the current tag relationship mapping, if null it will clear it out */
+    void SetTagRelationshipMapping(UAbilityTagRelationshipMapping* NewMapping) { TagRelationshipMapping = NewMapping; };
+
 protected:
     virtual void AbilitySpecInputPressed(FGameplayAbilitySpec& Spec) override;
     virtual void AbilitySpecInputReleased(FGameplayAbilitySpec& Spec) override;
 	virtual void NotifyAbilityFailed(const FGameplayAbilitySpecHandle Handle, UGameplayAbility* Ability, const FGameplayTagContainer& FailureReason) override;
+
+	virtual void ApplyAbilityBlockAndCancelTags(const FGameplayTagContainer& AbilityTags, UGameplayAbility* RequestingAbility, bool bEnableBlockTags, const FGameplayTagContainer& BlockTags, bool bExecuteCancelTags, const FGameplayTagContainer& CancelTags) override;
+
+    UPROPERTY()
+    TObjectPtr<UAbilityTagRelationshipMapping> TagRelationshipMapping;
 
     /* Handles to abilities that had their input pressed this frame */
     TArray<FGameplayAbilitySpecHandle> InputPressedSpecHandles;

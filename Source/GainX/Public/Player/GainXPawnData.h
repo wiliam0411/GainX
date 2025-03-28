@@ -9,6 +9,7 @@ class APawn;
 class UGainXAbilitySet;
 class UGainXInputConfig;
 class UGainXCameraMode;
+class UAbilityTagRelationshipMapping;
 
 /**
  * Non-mutable data asset that contains properties used to define a pawn.
@@ -28,6 +29,10 @@ public:
     /* Ability sets to grant to this pawn's ability system. */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GainX|Abilities")
     TArray<TObjectPtr<UGainXAbilitySet>> AbilitySets;
+
+    // What mapping of ability tags to use for actions taking by this pawn
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GainX|Abilities")
+    TObjectPtr<UAbilityTagRelationshipMapping> TagRelationshipMapping;
 
     /* Input configuration used by player controlled pawns to create input mappings and bind input actions. */
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "GainX|Input")

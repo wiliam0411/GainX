@@ -23,8 +23,7 @@ DEFINE_LOG_CATEGORY_STATIC(LogGainXCharacter, All, All);
 static FName NAME_GainXCharacterCollisionProfile_Capsule(TEXT("GainXPawnCapsule"));
 static FName NAME_GainXCharacterCollisionProfile_Mesh(TEXT("GainXPawnMesh"));
 
-AGainXBaseCharacter::AGainXBaseCharacter(const FObjectInitializer& ObjectInitializer)
-    : Super(ObjectInitializer.SetDefaultSubobjectClass<UGainXCharacterMovementComponent>(ACharacter::CharacterMovementComponentName))
+AGainXBaseCharacter::AGainXBaseCharacter(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer.SetDefaultSubobjectClass<UGainXCharacterMovementComponent>(ACharacter::CharacterMovementComponentName))
 {
     PrimaryActorTick.bCanEverTick = true;
     PrimaryActorTick.bStartWithTickEnabled = true;
@@ -135,15 +134,14 @@ void AGainXBaseCharacter::PostInitializeComponents()
 
         ExperienceComponent->CallOrRegister_OnExperienceLoaded(FOnGainXExperienceLoaded::FDelegate::CreateUObject(this, &ThisClass::OnExperienceLoaded));
     }
-
-
 }
 
-void AGainXBaseCharacter::BeginPlay() 
+void AGainXBaseCharacter::BeginPlay()
 {
     Super::BeginPlay();
 
-
+    check(PawnData);
+    AbilitySystemComponent->SetTagRelationshipMapping(PawnData->TagRelationshipMapping);
 }
 
 void AGainXBaseCharacter::Tick(float DeltaTime)
@@ -156,7 +154,7 @@ void AGainXBaseCharacter::Tick(float DeltaTime)
     AbilitySystemComponent->ProcessAbilityInput();
 }
 
-void AGainXBaseCharacter::OnConstruction(const FTransform& Transform) 
+void AGainXBaseCharacter::OnConstruction(const FTransform& Transform)
 {
     Super::OnConstruction(Transform);
 
@@ -287,7 +285,7 @@ void AGainXBaseCharacter::OnExperienceLoaded(const UGainXExperience* CurrentExpe
     }
 }
 
-void AGainXBaseCharacter::UpdateEyeHeight(float DeltaTime) 
+void AGainXBaseCharacter::UpdateEyeHeight(float DeltaTime)
 {
     CurrentEyeHeight = FMath::FInterpTo(CurrentEyeHeight, TargetEyeHeight, DeltaTime, CrouchSpeed);
     if (GetFirstPersonCamera())
